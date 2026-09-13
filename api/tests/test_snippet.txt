@@ -1,0 +1,5 @@
+﻿    const rawBody = Buffer.isBuffer(req.body)
+      ? req.body
+      : typeof req.body === "string"
+      ? Buffer.from(req.body, "utf8")
+      : Buffer.from(JSON.stringify(req.body), "utf8");

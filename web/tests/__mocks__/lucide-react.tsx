@@ -1,0 +1,27 @@
+import React from "react";
+
+const createMockIcon = (name: string) => {
+  const Icon = (props: any) => <span data-testid={`icon-${name}`} {...props} />;
+  Icon.displayName = name;
+  return Icon;
+};
+
+export const Check = createMockIcon("Check");
+export const Copy = createMockIcon("Copy");
+export const UploadCloud = createMockIcon("UploadCloud");
+export const FileText = createMockIcon("FileText");
+export const CheckCircle2 = createMockIcon("CheckCircle2");
+export const AlertCircle = createMockIcon("AlertCircle");
+export const Loader2 = createMockIcon("Loader2");
+export const ArrowRight = createMockIcon("ArrowRight");
+export const Key = createMockIcon("Key");
+export const ShieldCheck = createMockIcon("ShieldCheck");
+export const Zap = createMockIcon("Zap");
+export const BarChart2 = createMockIcon("BarChart2");
+export const CreditCard = createMockIcon("CreditCard");
+export const RefreshCw = createMockIcon("RefreshCw");
+export const LogOut = createMockIcon("LogOut");
+export const Code2 = createMockIcon("Code2");
+export const ExternalLink = createMockIcon("ExternalLink");
+export const Eye = createMockIcon("Eye");
+export const EyeOff = createMockIcon("EyeOff");

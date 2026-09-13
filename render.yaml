@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: receiptparser-api
+    runtime: node
+    rootDir: api
+    plan: starter
+    buildCommand: npm install && npm run build
+    preDeployCommand: npm run db:migrate
+    startCommand: npm start
+    healthCheckPath: /v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_STARTER_PRICE_ID
+        sync: false
+      - key: STRIPE_PRO_PRICE_ID
+        sync: false
+      - key: RECOVERY_SECRET
+        generateValue: true
+      - key: MOCK_DB
+        value: "false"
+      - key: MOCK_LLM
+        value: "false"
+      - key: MOCK_STRIPE
+        value: "false"
+      - key: WEB_ORIGIN
+        value: https://receiptparser.io
