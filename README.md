@@ -6,7 +6,75 @@ Targeted for US developers, expense-management software, bookkeeping platforms, 
 
 ---
 
-## Production Architecture
+## Run ReceiptParser.io Locally
+
+Follow these simple steps to run the complete project on your Windows laptop for development or college demonstration without needing Render or Railway:
+
+### 1. Install Node.js
+Ensure Node.js (v20 or higher) is installed on your computer:
+- Download from [nodejs.org](https://nodejs.org).
+
+### 2. Open the project folder
+Open PowerShell, Command Prompt, or terminal and navigate to the project:
+```bash
+cd "C:\Users\janes\.gemini\antigravity\scratch\project m\receiptparser"
+```
+
+### 3. Create `.env` from `.env.example`
+In `receiptparser/api/`, create your `.env` file:
+```bash
+cd api
+copy .env.example .env
+```
+
+### 4. Add your configuration values in `api/.env`
+Open `api/.env` in any text editor and fill in your values:
+- **`DATABASE_URL`**: Your Supabase connection string:
+  `postgresql://postgres.wwntcjjyjvpxyifdabug:YOUR_PASSWORD@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres`
+- **`GEMINI_API_KEY`**: Your Google Gemini API Key from Google AI Studio.
+- **`PORT`**: `10000` (defaults to 10000).
+- **`WEB_ORIGIN`**: `http://localhost:3000,http://localhost:3001`
+- **Stripe values**: Leave default or mock values for demonstration without real charges.
+
+### 5. Start the API Server
+
+**Option A (One-Click Windows Script):**
+From the `receiptparser\` folder, double-click or run:
+```cmd
+start-local.bat
+```
+
+**Option B (Manual Commands):**
+```bash
+cd api
+npm install --include=dev
+npm run build
+npm start
+```
+The server will start at: **http://localhost:10000**
+
+### 6. Test `/v1/health`
+Open your browser or run:
+```bash
+curl http://localhost:10000/v1/health
+```
+You will receive:
+```json
+{"status":"healthy","timestamp":"..."}
+```
+
+### 7. Open the Frontend Web Application
+In a second terminal window, run:
+```bash
+cd web
+npm install
+npm run dev
+```
+*(Or double-click `start-web.bat`)*
+
+Then open your browser to **http://localhost:3001** to view the landing page, create an API key, and test receipts!
+
+---
 
 ```
                        ┌─────────────────────────┐

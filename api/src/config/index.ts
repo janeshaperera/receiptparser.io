@@ -1,4 +1,4 @@
-﻿import dotenv from "dotenv";
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -7,7 +7,7 @@ export const config = {
     return process.env.NODE_ENV || "development";
   },
   get port(): number {
-    return parseInt(process.env.PORT || "3000", 10);
+    return parseInt(process.env.PORT || "10000", 10);
   },
   get databaseUrl(): string {
     return process.env.DATABASE_URL || "";

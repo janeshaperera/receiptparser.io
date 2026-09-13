@@ -5,7 +5,7 @@
  * Default target: http://localhost:3000
  */
 
-const targetUrl = process.argv[2] || process.env.API_URL || "http://localhost:3000";
+const targetUrl = process.argv[2] || process.env.API_URL || "http://localhost:10000";
 
 console.log("==========================================");
 console.log("ReceiptParser.io Production Smoke Tester");

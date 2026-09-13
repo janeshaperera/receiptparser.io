@@ -1,4 +1,4 @@
-﻿import express, { Express } from "express";
+import express, { Express } from "express";
 import helmet from "helmet";
 import cors from "cors";
 import { config } from "./config/index.js";
@@ -14,7 +14,10 @@ export function createApp(options?: { rateLimitMax?: number }): Express {
   app.use(helmet());
 
   // CORS Configuration
-  const corsOrigin = config.env === "production" ? config.webOrigin : "*";
+  const configuredOrigins = config.webOrigin.includes(",")
+    ? config.webOrigin.split(",").map((s) => s.trim())
+    : config.webOrigin;
+  const corsOrigin = config.env === "production" ? configuredOrigins : "*";
   app.use(
     cors({
       origin: corsOrigin,
