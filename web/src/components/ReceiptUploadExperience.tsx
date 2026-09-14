@@ -263,9 +263,9 @@ export default function ReceiptUploadExperience({
                     <button
                       type="button"
                       onClick={clearSelectedFile}
-                      className="text-xs text-rose-400 hover:underline"
+                      className="text-xs text-slate-400 hover:text-slate-200 underline transition-colors"
                     >
-                      Choose a different file
+                      Change file
                     </button>
                   </div>
                 </div>
