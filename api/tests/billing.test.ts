@@ -631,4 +631,123 @@ describe("ReceiptParser.io Phase 2: Usage + Stripe Billing Test Suite", () => {
     expect(res.body.stats.estimated_ai_cost_usd).toBeGreaterThan(0);
     expect(res.body.stats.active_users_this_month).toBeGreaterThanOrEqual(1);
   });
+
+  // ================= USER SIGNUP & LOGIN AUTH TESTS =================
+
+  test("33. POST /v1/auth/signup creates account with name and password", async () => {
+    const res = await request(app)
+      .post("/v1/auth/signup")
+      .send({
+        name: "Jane Doe",
+        email: "janedoe@example.com",
+        password: "securePassword123",
+        confirmPassword: "securePassword123"
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.user).toBeDefined();
+    expect(res.body.user.email).toBe("janedoe@example.com");
+    expect(res.body.user.name).toBe("Jane Doe");
+    expect(res.body.api_key).toBeDefined();
+    expect(res.body.api_key.raw_key).toContain("rcpt_live_");
+  });
+
+  test("34. POST /v1/auth/signup rejects duplicate email with 409 EMAIL_ALREADY_EXISTS", async () => {
+    // Register initial user
+    await request(app)
+      .post("/v1/auth/signup")
+      .send({
+        name: "Jane Doe",
+        email: "janedoe@example.com",
+        password: "securePassword123",
+        confirmPassword: "securePassword123"
+      });
+
+    // Attempt duplicate signup with same email
+    const res = await request(app)
+      .post("/v1/auth/signup")
+      .send({
+        name: "Duplicate User",
+        email: "janedoe@example.com",
+        password: "anotherPassword123",
+        confirmPassword: "anotherPassword123"
+      });
+
+    expect(res.status).toBe(409);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe("EMAIL_ALREADY_EXISTS");
+  });
+
+  test("35. POST /v1/auth/signup rejects mismatched confirmPassword", async () => {
+    const res = await request(app)
+      .post("/v1/auth/signup")
+      .send({
+        name: "Test User",
+        email: "mismatch@example.com",
+        password: "password123",
+        confirmPassword: "differentPassword"
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe("INVALID_REQUEST");
+  });
+
+  test("36. POST /v1/auth/login succeeds with valid email and password", async () => {
+    await request(app)
+      .post("/v1/auth/signup")
+      .send({
+        name: "Jane Doe",
+        email: "janedoe@example.com",
+        password: "securePassword123",
+        confirmPassword: "securePassword123"
+      });
+
+    const res = await request(app)
+      .post("/v1/auth/login")
+      .send({
+        email: "janedoe@example.com",
+        password: "securePassword123"
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.user.email).toBe("janedoe@example.com");
+    expect(res.body.api_key.raw_key).toBeDefined();
+  });
+
+  test("37. POST /v1/auth/login rejects invalid password with 401 INVALID_CREDENTIALS", async () => {
+    await request(app)
+      .post("/v1/auth/signup")
+      .send({
+        name: "Jane Doe",
+        email: "janedoe@example.com",
+        password: "securePassword123",
+        confirmPassword: "securePassword123"
+      });
+
+    const res = await request(app)
+      .post("/v1/auth/login")
+      .send({
+        email: "janedoe@example.com",
+        password: "wrongPassword"
+      });
+
+    expect(res.status).toBe(401);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe("INVALID_CREDENTIALS");
+  });
+
+  test("38. POST /v1/auth/login rejects non-existent email with 401 INVALID_CREDENTIALS", async () => {
+    const res = await request(app)
+      .post("/v1/auth/login")
+      .send({
+        email: "nobody@example.com",
+        password: "anyPassword"
+      });
+
+    expect(res.status).toBe(401);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe("INVALID_CREDENTIALS");
+  });
 });

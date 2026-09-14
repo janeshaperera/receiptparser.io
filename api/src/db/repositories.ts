@@ -4,7 +4,9 @@ import { PlanTier } from "../schemas/billing.schema.js";
 
 export interface UserRecord {
   id: string;
+  name?: string | null;
   email: string;
+  password_hash?: string | null;
   plan_tier: PlanTier;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
@@ -100,11 +102,19 @@ export class UserRepository {
     return res.rows[0] || null;
   }
 
-  static async create(email: string): Promise<UserRecord> {
+  static async create(
+    email: string,
+    options?: { name?: string; password_hash?: string }
+  ): Promise<UserRecord> {
+    const name = options?.name || "User";
+    const passwordHash = options?.password_hash || null;
+
     if (config.mockDb) {
       const newUser: UserRecord = {
         id: `mock-user-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+        name,
         email: email.toLowerCase(),
+        password_hash: passwordHash,
         plan_tier: "free",
         stripe_customer_id: null,
         stripe_subscription_id: null,
@@ -117,8 +127,10 @@ export class UserRepository {
     }
 
     const res = await query<UserRecord>(
-      `INSERT INTO users (email, plan_tier) VALUES ($1, 'free') RETURNING *`,
-      [email.toLowerCase()]
+      `INSERT INTO users (name, email, password_hash, plan_tier)
+       VALUES ($1, $2, $3, 'free')
+       RETURNING *`,
+      [name, email.toLowerCase(), passwordHash]
     );
     return res.rows[0];
   }

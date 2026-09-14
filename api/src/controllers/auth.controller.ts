@@ -1,17 +1,19 @@
-﻿import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 import { UserRepository, ApiKeyRepository } from "../db/repositories.js";
 import { ApiKeyService } from "../services/apiKey.service.js";
 import { emailService } from "../services/email.service.js";
 import { generateRecoveryToken, verifyRecoveryToken } from "../utils/crypto.js";
-import { SignupRequestSchema, RecoverRequestSchema, RecoverConfirmRequestSchema } from "../schemas/auth.schema.js";
+import bcrypt from "bcrypt";
+import { SignupRequestSchema, LoginRequestSchema, RecoverRequestSchema, RecoverConfirmRequestSchema } from "../schemas/auth.schema.js";
 import { AppError } from "../schemas/receipt.schema.js";
 import { config } from "../config/index.js";
 
 export class AuthController {
   /**
    * POST /v1/auth/signup
-   * Passwordless signup: accepts email, creates user & API key,
-   * returns raw API key ONCE.
+   * Supports name, email, password, and confirmPassword.
+   * Rejects duplicate emails with EMAIL_ALREADY_EXISTS.
+   * Creates user & API key, returns user info and raw API key.
    */
   static async signup(req: Request, res: Response, next: NextFunction): Promise<void> {
     const parsed = SignupRequestSchema.safeParse(req.body);
@@ -19,34 +21,47 @@ export class AuthController {
       return next(
         new AppError(
           "INVALID_REQUEST",
-          parsed.error.errors[0]?.message || "Invalid email address",
+          parsed.error.errors[0]?.message || "Invalid signup details",
           400
         )
       );
     }
 
-    const { email } = parsed.data;
+    const { name, email, password } = parsed.data;
 
     try {
-      let user = await UserRepository.findByEmail(email);
-      let isNewUser = false;
-
-      if (!user) {
-        user = await UserRepository.create(email);
-        isNewUser = true;
+      let existingUser = await UserRepository.findByEmail(email);
+      if (existingUser) {
+        return next(
+          new AppError(
+            "EMAIL_ALREADY_EXISTS",
+            "An account with this email already exists. Please sign in instead.",
+            409
+          )
+        );
       }
+
+      let passwordHash: string | undefined = undefined;
+      if (password) {
+        passwordHash = await bcrypt.hash(password, 10);
+      }
+
+      const user = await UserRepository.create(email, {
+        name: name || "User",
+        password_hash: passwordHash
+      });
 
       // Generate API key for the user
       const { apiKey, rawKey } = await ApiKeyService.createApiKey(
         user.id,
-        isNewUser ? "Initial Key" : "Dashboard Key"
+        "Primary Account Key"
       );
 
       // Generate recovery token and email link
       const recoveryToken = generateRecoveryToken(user.email);
       const recoveryUrl = `${config.webOrigin}/recover?token=${encodeURIComponent(recoveryToken)}`;
 
-      // Send passwordless welcome/recovery email
+      // Send passwordless welcome/recovery email (asynchronous, non-blocking)
       emailService.sendEmail({
         to: user.email,
         subject: "Your ReceiptParser.io Account Access & Recovery Link",
@@ -66,6 +81,7 @@ Documentation: ${config.webOrigin}/docs`
       res.status(201).json({
         user: {
           id: user.id,
+          name: user.name,
           email: user.email,
           plan: user.plan_tier
         },
@@ -74,7 +90,77 @@ Documentation: ${config.webOrigin}/docs`
           prefix: apiKey.key_prefix,
           raw_key: rawKey
         },
-        message: "API key generated successfully. Save this key now; it will not be shown again."
+        message: "Account created successfully."
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * POST /v1/auth/login
+   * Supports email + password authentication.
+   * Validates credentials and returns active/generated API key for session.
+   */
+  static async login(req: Request, res: Response, next: NextFunction): Promise<void> {
+    const parsed = LoginRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return next(
+        new AppError(
+          "INVALID_REQUEST",
+          parsed.error.errors[0]?.message || "Email and password are required",
+          400
+        )
+      );
+    }
+
+    const { email, password } = parsed.data;
+
+    try {
+      const user = await UserRepository.findByEmail(email);
+      if (!user) {
+        return next(
+          new AppError("INVALID_CREDENTIALS", "Invalid email or password", 401)
+        );
+      }
+
+      if (!user.password_hash) {
+        return next(
+          new AppError(
+            "INVALID_CREDENTIALS",
+            "This account was created without a password. Please sign in with your API key or recover access.",
+            401
+          )
+        );
+      }
+
+      const isValidPassword = await bcrypt.compare(password, user.password_hash);
+      if (!isValidPassword) {
+        return next(
+          new AppError("INVALID_CREDENTIALS", "Invalid email or password", 401)
+        );
+      }
+
+      // Find or generate active API key for this session
+      const { apiKey, rawKey } = await ApiKeyService.createApiKey(
+        user.id,
+        "Login Session Key"
+      );
+
+      res.status(200).json({
+        success: true,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          plan: user.plan_tier,
+          stripe_customer_id: user.stripe_customer_id
+        },
+        api_key: {
+          id: apiKey.id,
+          prefix: apiKey.key_prefix,
+          raw_key: rawKey
+        }
       });
     } catch (err) {
       next(err);

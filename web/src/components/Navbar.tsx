@@ -41,13 +41,13 @@ export default function Navbar() {
             href="/login"
             className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
           >
-            Sign in
+            Sign In
           </Link>
           <Link
             href="/signup"
             className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition-all shadow-md shadow-cyan-500/20 active:scale-[0.98]"
           >
-            Get API Key
+            Create Account
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -101,14 +101,14 @@ export default function Navbar() {
               onClick={() => setMobileOpen(false)}
               className="text-center py-2 text-sm font-medium text-slate-300"
             >
-              Sign in
+              Sign In
             </Link>
             <Link
               href="/signup"
               onClick={() => setMobileOpen(false)}
               className="text-center py-2 rounded-xl text-sm font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400"
             >
-              Get API Key
+              Create Account
             </Link>
           </div>
         </div>

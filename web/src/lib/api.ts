@@ -43,16 +43,30 @@ async function handleResponse<T>(res: Response): Promise<T> {
 }
 
 export const api = {
-  async signup(email: string) {
+  async signup(data: { name?: string; email: string; password?: string; confirmPassword?: string } | string) {
+    const payload = typeof data === "string" ? { email: data } : data;
     const res = await fetch(`${API_BASE_URL}/v1/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email })
+      body: JSON.stringify(payload)
     });
     return handleResponse<{
-      user: { id: string; email: string; plan: string };
+      user: { id: string; name?: string; email: string; plan: string };
       api_key: { id: string; prefix: string; raw_key: string };
       message: string;
+    }>(res);
+  },
+
+  async login(email: string, password?: string) {
+    const res = await fetch(`${API_BASE_URL}/v1/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+    return handleResponse<{
+      success: boolean;
+      user: { id: string; name?: string; email: string; plan: string; stripe_customer_id: string | null };
+      api_key: { id: string; prefix: string; raw_key: string };
     }>(res);
   },
 

@@ -40,13 +40,13 @@ export default function LandingPage() {
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
-                <a
-                  href="#upload-receipt"
+                <Link
+                  href="/signup"
                   className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-sm sm:text-base transition-all shadow-xl shadow-cyan-500/25 active:scale-[0.98] flex items-center justify-center gap-2"
                 >
                   Try it free
                   <ArrowRight className="w-4 h-4" />
-                </a>
+                </Link>
                 <a
                   href="#how-it-works"
                   className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-slate-700 bg-slate-900/60 hover:bg-slate-800 text-slate-200 font-semibold text-sm transition-all flex items-center justify-center gap-2"

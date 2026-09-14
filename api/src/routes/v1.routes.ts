@@ -18,8 +18,9 @@ router.get("/status", HealthController.getStatus);
 // Admin stats endpoint (requires x-admin-key header)
 router.get("/admin/stats", AdminController.getStats);
 
-// Passwordless Authentication & Recovery endpoints
+// Authentication & Recovery endpoints
 router.post("/auth/signup", AuthController.signup);
+router.post("/auth/login", AuthController.login);
 router.post("/auth/verify", authenticateApiKey, AuthController.verifyKey);
 router.post("/auth/recover", AuthController.recover);
 router.post("/auth/recover/confirm", AuthController.confirmRecovery);

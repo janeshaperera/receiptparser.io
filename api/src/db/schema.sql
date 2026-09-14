@@ -5,7 +5,9 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- 1. Users table
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) DEFAULT 'User',
     email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255),
     plan_tier VARCHAR(50) NOT NULL DEFAULT 'free',
     stripe_customer_id VARCHAR(255),
     stripe_subscription_id VARCHAR(255),
@@ -13,6 +15,10 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Safe migrations for existing databases
+ALTER TABLE users ADD COLUMN IF NOT EXISTS name VARCHAR(255) DEFAULT 'User';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255);
 
 CREATE INDEX IF NOT EXISTS idx_users_stripe_customer ON users(stripe_customer_id);
 CREATE INDEX IF NOT EXISTS idx_users_stripe_subscription ON users(stripe_subscription_id);
