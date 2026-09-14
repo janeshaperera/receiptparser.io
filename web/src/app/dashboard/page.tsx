@@ -48,8 +48,8 @@ export default function DashboardPage() {
     loadDashboardData(key);
   }, []);
 
-  const loadDashboardData = async (key: string) => {
-    setLoading(true);
+  const loadDashboardData = async (key: string, silent = false) => {
+    if (!silent) setLoading(true);
     setError(null);
     try {
       // 1. Verify user profile
@@ -71,7 +71,7 @@ export default function DashboardPage() {
         setError(err.message || "Failed to load account information.");
       }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -195,8 +195,8 @@ export default function DashboardPage() {
             defaultApiKey={apiKey || ""}
             onSuccess={() => {
               if (apiKey) {
-                // Refresh usage metrics after parsing
-                loadDashboardData(apiKey);
+                // Refresh usage metrics in background without full-page loading flash
+                loadDashboardData(apiKey, true);
               }
             }}
           />

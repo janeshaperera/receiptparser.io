@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { UploadCloud, FileText, CheckCircle2, AlertCircle, Loader2, X, Sparkles, Key } from "lucide-react";
 import { api, ApiClientError } from "../lib/api";
 import { getOrCreateDemoSessionKey } from "../lib/auth";
@@ -26,6 +26,13 @@ export default function ReceiptUploadExperience({
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const [showTechDetails, setShowTechDetails] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+
+  // Keep apiKey in sync when defaultApiKey arrives asynchronously (e.g. from session in dashboard)
+  useEffect(() => {
+    if (defaultApiKey && !apiKey) {
+      setApiKey(defaultApiKey);
+    }
+  }, [defaultApiKey]);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -124,10 +131,11 @@ export default function ReceiptUploadExperience({
         return;
       }
 
-      const data = await api.parseReceipt(keyToUse, file);
-      setResult(data);
+      const rawRes = await api.parseReceipt(keyToUse, file);
+      const parsedReceipt: ParsedReceiptData = (rawRes && rawRes.data) ? rawRes.data : rawRes;
+      setResult(parsedReceipt);
       if (onSuccess) {
-        onSuccess(data);
+        onSuccess(parsedReceipt);
       }
     } catch (err: any) {
       clearTimeout(step1);
