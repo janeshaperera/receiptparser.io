@@ -1,4 +1,4 @@
-﻿import Navbar from "@/components/Navbar";
+import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CodeTabs from "@/components/CodeTabs";
 import { Terminal, Shield, FileText, AlertCircle, CheckCircle2 } from "lucide-react";
@@ -65,6 +65,9 @@ export default function DocsPage() {
                 <Terminal className="w-5 h-5 text-cyan-400" />
                 Quickstart
               </h2>
+              <div className="p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-xs text-cyan-200">
+                💡 <strong>Beginner Tip:</strong> Use this quickstart snippet to upload a receipt file from your code and receive clean structured receipt data back immediately.
+              </div>
               <p className="text-sm text-slate-400">
                 Generate an API key in 5 seconds from the signup page, then execute a multipart POST request with your file:
               </p>
@@ -78,13 +81,13 @@ export default function DocsPage() {
                 Authentication
               </h2>
               <p className="text-sm text-slate-300 leading-relaxed">
-                All requests to protected endpoints require an API key passed in the standard HTTP <code className="text-cyan-300 bg-slate-900 px-1.5 py-0.5 rounded text-xs font-mono">Authorization</code> header:
+                Use your secret API key to authenticate requests. Send it in the standard HTTP <code className="text-cyan-300 bg-slate-900 px-1.5 py-0.5 rounded text-xs font-mono">Authorization</code> header with the word <code className="text-cyan-300 bg-slate-900 px-1.5 py-0.5 rounded text-xs font-mono">Bearer</code>:
               </p>
               <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg font-mono text-xs text-cyan-400">
                 Authorization: Bearer rcpt_live_xxxxxxxxxxxxxxxxxxxxxxxx
               </div>
               <p className="text-xs text-slate-400">
-                API keys are cryptographically random, prefixed with <code className="text-slate-300 font-mono">rcpt_live_</code>, and stored on our servers using salted bcrypt hashes.
+                API keys are cryptographically secure, prefixed with <code className="text-slate-300 font-mono">rcpt_live_</code>, and hashed with salted bcrypt on our servers.
               </p>
             </section>
 
@@ -107,7 +110,7 @@ export default function DocsPage() {
                 <div className="p-4 rounded-xl border border-slate-800 bg-[#0d131f] space-y-2">
                   <h4 className="font-semibold text-white">File Size Limitation</h4>
                   <p className="text-xs text-slate-400 leading-relaxed">
-                    Maximum file size is <strong>10 MB</strong>. All uploads are validated via file header magic bytes in addition to MIME type and extension to prevent spoofing.
+                    Maximum file size is <strong>10 MB</strong>. All uploads are validated via file header magic bytes to prevent file spoofing.
                   </p>
                 </div>
               </div>
@@ -122,10 +125,10 @@ export default function DocsPage() {
                 <h2 className="text-xl font-bold text-white font-mono">/v1/parse</h2>
               </div>
               <p className="text-sm text-slate-300">
-                Primary receipt parsing endpoint. Accepts a multipart/form-data payload with a <code className="font-mono text-cyan-300">file</code> field.
+                Use this endpoint when you want to send a receipt to ReceiptParser.io and get extracted JSON data back. Accepts a <code className="font-mono text-cyan-300">multipart/form-data</code> payload with a <code className="font-mono text-cyan-300">file</code> field.
               </p>
 
-              <h3 className="text-sm font-semibold text-white mt-4">Response Object:</h3>
+              <h3 className="text-sm font-semibold text-white mt-4">Example Structured JSON Response:</h3>
               <pre className="p-4 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-cyan-300 overflow-x-auto leading-relaxed">
 {`{
   "vendor_name": "Blue Bottle Coffee",
@@ -138,13 +141,80 @@ export default function DocsPage() {
       "quantity": 1,
       "unit_price": 4.75,
       "total_price": 4.75
+    },
+    {
+      "description": "Almond Croissant",
+      "quantity": 2,
+      "unit_price": 5.25,
+      "total_price": 10.50
     }
   ],
-  "subtotal": 4.75,
-  "tax": 0.42,
-  "total": 5.17
+  "subtotal": 15.25,
+  "tax": 1.37,
+  "total": 16.62
 }`}
               </pre>
+            </section>
+
+            {/* ENDPOINT: GET /v1/usage */}
+            <section id="usage-endpoint" className="space-y-4 pt-6 border-t border-slate-800">
+              <div className="flex items-center gap-3">
+                <span className="px-2.5 py-1 rounded-md text-xs font-mono font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                  GET
+                </span>
+                <h2 className="text-xl font-bold text-white font-mono">/v1/usage</h2>
+              </div>
+              <p className="text-sm text-slate-300">
+                Use this endpoint to check your current subscription tier, your monthly usage quota, and remaining receipt parses.
+              </p>
+              <pre className="p-4 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-cyan-300 overflow-x-auto leading-relaxed">
+{`{
+  "user_id": "00000000-0000-0000-0000-000000000001",
+  "plan": "free",
+  "used": 12,
+  "total_requests": 12,
+  "limit": 50,
+  "remaining": 38,
+  "period": "2026-09"
+}`}
+              </pre>
+            </section>
+
+            {/* ENDPOINT: GET /v1/usage/daily */}
+            <section id="daily-endpoint" className="space-y-4 pt-6 border-t border-slate-800">
+              <div className="flex items-center gap-3">
+                <span className="px-2.5 py-1 rounded-md text-xs font-mono font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                  GET
+                </span>
+                <h2 className="text-xl font-bold text-white font-mono">/v1/usage/daily</h2>
+              </div>
+              <p className="text-sm text-slate-300">
+                Use this endpoint to retrieve day-by-day request volumes for the past 30 days. Perfect for displaying usage charts.
+              </p>
+              <pre className="p-4 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-cyan-300 overflow-x-auto leading-relaxed">
+{`{
+  "user_id": "00000000-0000-0000-0000-000000000001",
+  "plan": "free",
+  "days": [
+    { "date": "2026-09-12", "count": 5 },
+    { "date": "2026-09-13", "count": 8 },
+    { "date": "2026-09-14", "count": 14 }
+  ]
+}`}
+              </pre>
+            </section>
+
+            {/* BILLING SECTION */}
+            <section id="checkout-endpoint" className="space-y-4 pt-6 border-t border-slate-800">
+              <div className="flex items-center gap-3">
+                <span className="px-2.5 py-1 rounded-md text-xs font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                  POST
+                </span>
+                <h2 className="text-xl font-bold text-white font-mono">/v1/billing/checkout</h2>
+              </div>
+              <p className="text-sm text-slate-300">
+                Use this endpoint to create a Stripe checkout session for upgrading to Starter ($29/mo) or Pro ($99/mo).
+              </p>
             </section>
 
             {/* ERROR FORMAT */}

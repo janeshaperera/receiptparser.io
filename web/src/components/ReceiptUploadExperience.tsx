@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { UploadCloud, FileText, CheckCircle2, AlertCircle, Loader2, X, Sparkles, Key } from "lucide-react";
 import { api, ApiClientError } from "../lib/api";
+import { getOrCreateDemoSessionKey } from "../lib/auth";
 import ReceiptResultsView, { ParsedReceiptData } from "./ReceiptResultsView";
 
 interface ReceiptUploadExperienceProps {
@@ -33,7 +34,7 @@ export default function ReceiptUploadExperience({ defaultApiKey = "" }: ReceiptU
     setErrorDetails(null);
 
     if (!allowedTypes.includes(selected.type)) {
-      setError("Unsupported format. Please upload a JPG, PNG, WEBP, or PDF receipt.");
+      setError("We can't read this file type. Please upload a JPG, PNG, WEBP, or PDF.");
       setFile(null);
       setPreviewUrl(null);
       return;
@@ -98,14 +99,28 @@ export default function ReceiptUploadExperience({ defaultApiKey = "" }: ReceiptU
     setErrorDetails(null);
     setProcessingStep(0);
 
-    // Animate user-friendly progression steps
-    const step1 = setTimeout(() => setProcessingStep(1), 400);  // Reading text
-    const step2 = setTimeout(() => setProcessingStep(2), 1100); // Extracting information
-    const step3 = setTimeout(() => setProcessingStep(3), 1900); // Preparing results
+    // Animate user-friendly progression steps:
+    // Step 0: ✓ Receipt uploaded
+    // Step 1: ✓ Reading receipt
+    // Step 2: ● Extracting information
+    // Step 3: ○ Checking results
+    const step1 = setTimeout(() => setProcessingStep(1), 500);
+    const step2 = setTimeout(() => setProcessingStep(2), 1200);
+    const step3 = setTimeout(() => setProcessingStep(3), 2000);
 
     try {
-      // If user has not entered a custom key, use demo key or existing session
-      const keyToUse = apiKey.trim() || "rcpt_live_demo000000000000000000000000";
+      let keyToUse = apiKey.trim();
+      if (!keyToUse) {
+        keyToUse = await getOrCreateDemoSessionKey();
+      }
+
+      if (!keyToUse) {
+        setError("An API key is required to process receipts. Please create a key or enter yours below.");
+        setShowKeyInput(true);
+        setLoading(false);
+        return;
+      }
+
       const data = await api.parseReceipt(keyToUse, file);
       setResult(data);
     } catch (err: any) {
@@ -115,10 +130,14 @@ export default function ReceiptUploadExperience({ defaultApiKey = "" }: ReceiptU
 
       if (err instanceof ApiClientError) {
         if (err.code === "MISSING_API_KEY" || err.code === "INVALID_API_KEY") {
-          setError("An API key is required. You can get a free key in 5 seconds without a credit card.");
+          setError("Your session or API key is invalid. Please get a new free key.");
           setShowKeyInput(true);
         } else if (err.code === "PLAN_LIMIT_EXCEEDED") {
-          setError("Your monthly free receipt limit has been reached.");
+          setError("Your monthly free receipt limit (50 receipts) has been reached.");
+        } else if (err.code === "INVALID_FILE_TYPE") {
+          setError("We can't read this file type. Please upload a JPG, PNG, WEBP, or PDF.");
+        } else if (err.code === "FILE_TOO_LARGE") {
+          setError("File exceeds 10 MB limit. Please upload a smaller receipt.");
         } else {
           setError("Something went wrong while processing your receipt.");
         }
@@ -176,22 +195,22 @@ export default function ReceiptUploadExperience({ defaultApiKey = "" }: ReceiptU
 
               {!file ? (
                 <>
-                  <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 mb-4 shadow-lg shadow-cyan-500/10">
-                    <UploadCloud className="w-8 h-8" />
+                  <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 mb-4 shadow-lg shadow-cyan-500/10 text-2xl">
+                    📄
                   </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-white mb-1">
+                  <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
                     Drop your receipt here
                   </h3>
-                  <p className="text-sm text-slate-400 mb-5">
-                    or click anywhere to browse from your device
+                  <p className="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-4">
+                    or
                   </p>
 
-                  <div className="px-5 py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-sm transition-all shadow-md shadow-cyan-500/20 pointer-events-none">
-                    Upload Receipt
+                  <div className="px-6 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-sm transition-all shadow-md shadow-cyan-500/20 pointer-events-none">
+                    Choose a file
                   </div>
 
-                  <p className="text-xs text-slate-500 mt-5">
-                    JPG, PNG, WEBP, or PDF • Up to 10 MB
+                  <p className="text-xs text-slate-400 mt-5">
+                    JPG, PNG, WEBP or PDF • Maximum 10 MB
                   </p>
                 </>
               ) : (
@@ -211,15 +230,15 @@ export default function ReceiptUploadExperience({ defaultApiKey = "" }: ReceiptU
                       <button
                         type="button"
                         onClick={clearSelectedFile}
-                        className="absolute -top-2 -right-2 p-1 rounded-full bg-slate-800 text-slate-300 hover:text-white border border-slate-600 shadow-lg transition-colors"
+                        className="absolute -top-2 -right-2 p-1.5 rounded-full bg-slate-800 text-slate-300 hover:text-white border border-slate-600 shadow-lg transition-colors"
                         title="Remove file"
                       >
                         <X className="w-4 h-4" />
                       </button>
                     </div>
                   ) : (
-                    <div className="w-14 h-14 rounded-xl bg-slate-800 flex items-center justify-center text-cyan-400 mb-3">
-                      <FileText className="w-8 h-8" />
+                    <div className="w-14 h-14 rounded-xl bg-slate-800 flex items-center justify-center text-cyan-400 mb-3 text-xl">
+                      📄
                     </div>
                   )}
 
@@ -294,7 +313,7 @@ export default function ReceiptUploadExperience({ defaultApiKey = "" }: ReceiptU
                       onClick={() => setShowTechDetails(!showTechDetails)}
                       className="text-[11px] text-slate-400 hover:text-slate-200 underline"
                     >
-                      {showTechDetails ? "Hide technical details" : "Show technical details"}
+                      {showTechDetails ? "Hide technical details" : "Technical details"}
                     </button>
                     {showTechDetails && (
                       <pre className="mt-2 p-2.5 rounded bg-black/40 text-[10px] font-mono text-slate-300 overflow-x-auto whitespace-pre-wrap">
@@ -332,44 +351,48 @@ export default function ReceiptUploadExperience({ defaultApiKey = "" }: ReceiptU
             <div className="space-y-1">
               <h3 className="text-xl font-bold text-white">Analyzing your receipt...</h3>
               <p className="text-xs text-slate-400">
-                Extracting merchant, line items, taxes, and dates with Gemini Vision
+                Extracting merchant, line items, taxes, and totals
               </p>
             </div>
 
             {/* Processing Checklist Steps */}
-            <div className="w-full max-w-xs space-y-2.5 text-left text-xs bg-slate-900/50 p-4 rounded-xl border border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <span className="text-emerald-400 font-bold">✓</span>
-                <span className="text-slate-200">Uploading receipt file</span>
+            <div className="w-full max-w-xs space-y-2.5 text-left text-xs bg-slate-900/60 p-4 rounded-xl border border-slate-800 font-medium">
+              <div className="flex items-center gap-3">
+                <span className="text-emerald-400 font-bold text-sm">✓</span>
+                <span className="text-slate-200">Receipt uploaded</span>
               </div>
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-3">
                 {processingStep >= 1 ? (
-                  <span className="text-emerald-400 font-bold">✓</span>
+                  <span className="text-emerald-400 font-bold text-sm">✓</span>
                 ) : (
-                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse ml-0.5"></span>
+                  <span className="text-cyan-400 font-bold text-sm">●</span>
                 )}
-                <span className={processingStep >= 1 ? "text-slate-200" : "text-slate-400"}>
-                  Reading document text
+                <span className={processingStep >= 1 ? "text-slate-200" : "text-cyan-300 font-semibold"}>
+                  Reading receipt
                 </span>
               </div>
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-3">
                 {processingStep >= 2 ? (
-                  <span className="text-emerald-400 font-bold">✓</span>
+                  <span className="text-emerald-400 font-bold text-sm">✓</span>
+                ) : processingStep === 1 ? (
+                  <span className="text-cyan-400 font-bold text-sm">●</span>
                 ) : (
-                  <span className="w-2 h-2 rounded-full bg-slate-600 ml-0.5"></span>
+                  <span className="text-slate-500 font-bold text-sm">○</span>
                 )}
-                <span className={processingStep >= 2 ? "text-slate-200" : "text-slate-500"}>
+                <span className={processingStep >= 2 ? "text-slate-200" : processingStep === 1 ? "text-cyan-300 font-semibold" : "text-slate-500"}>
                   Extracting information
                 </span>
               </div>
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-3">
                 {processingStep >= 3 ? (
-                  <span className="text-emerald-400 font-bold">✓</span>
+                  <span className="text-emerald-400 font-bold text-sm">✓</span>
+                ) : processingStep === 2 ? (
+                  <span className="text-cyan-400 font-bold text-sm">●</span>
                 ) : (
-                  <span className="w-2 h-2 rounded-full bg-slate-600 ml-0.5"></span>
+                  <span className="text-slate-500 font-bold text-sm">○</span>
                 )}
-                <span className={processingStep >= 3 ? "text-slate-200" : "text-slate-500"}>
-                  Preparing clean results
+                <span className={processingStep >= 3 ? "text-slate-200" : processingStep === 2 ? "text-cyan-300 font-semibold" : "text-slate-500"}>
+                  Checking results
                 </span>
               </div>
             </div>

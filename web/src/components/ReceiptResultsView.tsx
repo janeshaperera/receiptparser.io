@@ -45,7 +45,7 @@ export default function ReceiptResultsView({ data: initialData, onReset }: Recei
       "",
       "Items:",
       ...data.line_items.map(
-        (item) => `- ${item.description}: ${item.quantity} x ${item.unit_price.toFixed(2)} = ${item.total_price.toFixed(2)}`
+        (item) => `- ${item.description}: ${item.quantity} × ${item.unit_price.toFixed(2)} = ${item.total_price.toFixed(2)}`
       ),
       "",
       `Subtotal: ${data.subtotal.toFixed(2)}`,
@@ -81,49 +81,51 @@ export default function ReceiptResultsView({ data: initialData, onReset }: Recei
   return (
     <div className="space-y-6">
       {/* Top Banner & Primary Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 backdrop-blur-md">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-lg">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-300 font-bold text-lg">
             ✓
           </div>
           <div>
-            <h3 className="text-base font-bold text-white">Receipt Parsed Successfully</h3>
-            <p className="text-xs text-slate-400">All data verified and mathematically balanced</p>
+            <h3 className="text-base font-bold text-white flex items-center gap-1.5">
+              Receipt successfully analyzed <span className="text-emerald-400">✓</span>
+            </h3>
+            <p className="text-xs text-slate-300">Clean, structured summary ready for review</p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2.5">
           <button
-            onClick={handleCopySummary}
-            className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors flex items-center gap-1.5 border border-slate-700"
+            onClick={onReset}
+            className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition-all shadow-md shadow-cyan-500/20 flex items-center gap-1.5"
           >
-            {copied ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-emerald-400">Copied</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-3.5 h-3.5 text-slate-400" />
-                <span>Copy Data</span>
-              </>
-            )}
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Parse Another Receipt</span>
           </button>
 
           <button
             onClick={handleDownloadJson}
-            className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors flex items-center gap-1.5 border border-slate-700"
+            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors flex items-center gap-1.5 border border-slate-700"
           >
             <Download className="w-3.5 h-3.5 text-slate-400" />
-            <span>Download JSON</span>
+            <span>Download</span>
           </button>
 
           <button
-            onClick={onReset}
-            className="px-3.5 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold transition-all shadow-md shadow-cyan-500/20 flex items-center gap-1.5"
+            onClick={handleCopySummary}
+            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors flex items-center gap-1.5 border border-slate-700"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Parse Another Receipt</span>
+            {copied ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-emerald-400 font-semibold">Copied</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5 text-slate-400" />
+                <span>Copy</span>
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -401,7 +403,7 @@ export default function ReceiptResultsView({ data: initialData, onReset }: Recei
         >
           <span className="flex items-center gap-2 font-mono uppercase tracking-wider">
             <FileText className="w-4 h-4 text-cyan-400" />
-            Advanced / Developer Data (Raw JSON)
+            Advanced Data (Developer Details)
           </span>
           {showJson ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>

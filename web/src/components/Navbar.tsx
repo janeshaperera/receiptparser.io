@@ -25,7 +25,7 @@ export default function Navbar() {
             How it works
           </Link>
           <Link href="/try" className="hover:text-cyan-300 text-cyan-400 font-semibold transition-colors">
-            Try it
+            Try It
           </Link>
           <Link href="/#pricing" className="hover:text-white transition-colors">
             Pricing
@@ -79,7 +79,7 @@ export default function Navbar() {
             onClick={() => setMobileOpen(false)}
             className="block text-sm font-semibold text-cyan-400 hover:text-cyan-300"
           >
-            Try it
+            Try It
           </Link>
           <Link
             href="/#pricing"
