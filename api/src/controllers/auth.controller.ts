@@ -186,6 +186,7 @@ Documentation: ${config.webOrigin}/docs`
         valid: true,
         user: {
           id: user.id,
+          name: user.name,
           email: user.email,
           plan: user.plan_tier,
           stripe_customer_id: user.stripe_customer_id

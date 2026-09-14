@@ -79,7 +79,7 @@ export const api = {
     });
     return handleResponse<{
       valid: boolean;
-      user: { id: string; email: string; plan: string; stripe_customer_id: string | null };
+      user: { id: string; name?: string; email: string; plan: string; stripe_customer_id: string | null };
       api_key: { id: string; prefix: string; created_at: string };
     }>(res);
   },

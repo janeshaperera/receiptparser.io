@@ -1,9 +1,10 @@
-﻿import rateLimit from "express-rate-limit";
+import rateLimit from "express-rate-limit";
 import { config } from "../config/index.js";
 import { AppError } from "../schemas/receipt.schema.js";
 
 export function createRateLimiter(maxRequests?: number) {
-  const limit = maxRequests ?? config.rateLimitMax;
+  const defaultLimit = config.env === "development" ? 2000 : config.rateLimitMax;
+  const limit = maxRequests ?? defaultLimit;
   return rateLimit({
     windowMs: config.rateLimitWindowMs,
     max: limit,
