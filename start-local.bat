@@ -37,3 +37,8 @@ echo ========================================================
 echo.
 
 call npm start
+if %ERRORLEVEL% NEQ 0 (
+    echo.
+    echo [ERROR] Server terminated with error code %ERRORLEVEL%.
+    pause
+)

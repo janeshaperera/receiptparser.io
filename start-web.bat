@@ -24,3 +24,8 @@ echo ========================================================
 echo.
 
 call npm run dev
+if %ERRORLEVEL% NEQ 0 (
+    echo.
+    echo [ERROR] Web development server stopped with error code %ERRORLEVEL%.
+    pause
+)
