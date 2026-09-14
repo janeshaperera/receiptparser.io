@@ -15,7 +15,8 @@ test.describe.serial("ReceiptParser.io - Complete User Journey", () => {
   // 1. Homepage loads
   test("1. Homepage loads with clear hero and navigation", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveTitle(/ReceiptParser\.io/i);
+    // INTENTIONAL FAILURE FOR CI GATE VALIDATION
+    await expect(page).toHaveTitle(/NonExistentTitleToTestCIFailure/i);
     await expect(page.locator("h1")).toContainText(/Turn receipts into/i);
     await expect(page.locator("nav")).toBeVisible();
     await expect(page.getByRole("link", { name: /Create Account/i }).first()).toBeVisible();
