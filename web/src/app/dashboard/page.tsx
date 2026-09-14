@@ -34,7 +34,7 @@ export default function DashboardPage() {
   const [dailyUsage, setDailyUsage] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [billingLoading, setBillingLoading] = useState(false);
+  const [billingLoading, setBillingLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -89,31 +89,35 @@ export default function DashboardPage() {
 
   const handleUpgrade = async (plan: "starter" | "pro" | "business") => {
     if (!apiKey) return;
-    setBillingLoading(true);
+    setBillingLoading(plan);
     setError(null);
     try {
       const res = await api.createCheckout(apiKey, plan);
       if (res.checkout_url) {
         window.location.href = res.checkout_url;
+      } else {
+        setBillingLoading(null);
       }
     } catch (err: any) {
       setError(err.message || "Unable to initiate checkout.");
-      setBillingLoading(false);
+      setBillingLoading(null);
     }
   };
 
   const handlePortal = async () => {
     if (!apiKey) return;
-    setBillingLoading(true);
+    setBillingLoading("portal");
     setError(null);
     try {
       const res = await api.createPortal(apiKey);
       if (res.portal_url) {
         window.location.href = res.portal_url;
+      } else {
+        setBillingLoading(null);
       }
     } catch (err: any) {
       setError(err.message || "No active Stripe customer found. Please upgrade first.");
-      setBillingLoading(false);
+      setBillingLoading(null);
     }
   };
 
@@ -279,7 +283,7 @@ export default function DashboardPage() {
             {user?.stripe_customer_id && (
               <button
                 onClick={handlePortal}
-                disabled={billingLoading}
+                disabled={Boolean(billingLoading)}
                 className="px-4 py-2 rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0"
               >
                 <CreditCard className="w-3.5 h-3.5 text-cyan-400" />
@@ -303,14 +307,23 @@ export default function DashboardPage() {
               </div>
               <button
                 onClick={() => handleUpgrade("starter")}
-                disabled={billingLoading || plan === "starter"}
-                className={`w-full py-2 rounded-xl text-xs font-bold transition-all ${
+                disabled={Boolean(billingLoading) || plan === "starter"}
+                className={`w-full py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                   plan === "starter"
                     ? "bg-slate-800 text-slate-400 cursor-default"
                     : "border border-slate-700 hover:bg-slate-800 text-slate-200"
                 }`}
               >
-                {plan === "starter" ? "Current Plan" : "Upgrade to Starter ($5/mo)"}
+                {billingLoading === "starter" ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />
+                    <span>Connecting to Stripe...</span>
+                  </>
+                ) : plan === "starter" ? (
+                  "Current Plan"
+                ) : (
+                  "Upgrade to Starter ($5/mo)"
+                )}
               </button>
             </div>
 
@@ -330,14 +343,23 @@ export default function DashboardPage() {
               </div>
               <button
                 onClick={() => handleUpgrade("pro")}
-                disabled={billingLoading || plan === "pro"}
-                className={`w-full py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-cyan-500/20 ${
+                disabled={Boolean(billingLoading) || plan === "pro"}
+                className={`w-full py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-cyan-500/20 flex items-center justify-center gap-2 ${
                   plan === "pro"
                     ? "bg-slate-800 text-slate-400 cursor-default"
                     : "bg-cyan-500 hover:bg-cyan-400 text-slate-950"
                 }`}
               >
-                {plan === "pro" ? "Current Plan" : "Upgrade to Pro ($15/mo)"}
+                {billingLoading === "pro" ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-950" />
+                    <span>Connecting to Stripe...</span>
+                  </>
+                ) : plan === "pro" ? (
+                  "Current Plan"
+                ) : (
+                  "Upgrade to Pro ($15/mo)"
+                )}
               </button>
             </div>
 
@@ -354,14 +376,23 @@ export default function DashboardPage() {
               </div>
               <button
                 onClick={() => handleUpgrade("business")}
-                disabled={billingLoading || plan === "business"}
-                className={`w-full py-2 rounded-xl text-xs font-bold transition-all ${
+                disabled={Boolean(billingLoading) || plan === "business"}
+                className={`w-full py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                   plan === "business"
                     ? "bg-slate-800 text-slate-400 cursor-default"
                     : "border border-slate-700 hover:bg-slate-800 text-slate-200"
                 }`}
               >
-                {plan === "business" ? "Current Plan" : "Upgrade to Business ($39/mo)"}
+                {billingLoading === "business" ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />
+                    <span>Connecting to Stripe...</span>
+                  </>
+                ) : plan === "business" ? (
+                  "Current Plan"
+                ) : (
+                  "Upgrade to Business ($39/mo)"
+                )}
               </button>
             </div>
           </div>
