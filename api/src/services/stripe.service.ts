@@ -5,13 +5,16 @@ import { PlanTier, PLANS } from "../schemas/billing.schema.js";
 import { UserRepository } from "../db/repositories.js";
 
 export class StripeService {
-  private stripe: Stripe | null = null;
+  private _stripe: Stripe | null = null;
 
-  constructor() {
-    if (!config.mockStripe && config.stripeSecretKey) {
-      this.stripe = new Stripe(config.stripeSecretKey);
+  private get stripe(): Stripe | null {
+    if (!this._stripe && !config.mockStripe && config.stripeSecretKey) {
+      this._stripe = new Stripe(config.stripeSecretKey);
     }
+    return this._stripe;
   }
+
+  constructor() {}
 
   /**
    * Helper to map plan tier to configured Price ID

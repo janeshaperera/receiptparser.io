@@ -1,4 +1,10 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:10000";
+// Determine default API URL: Use environment variable if set, otherwise in browser production use the deployed Cloudflare Worker
+const DEFAULT_API_URL =
+  typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1"
+    ? "https://receiptparser-api.janeshaperera154.workers.dev"
+    : "http://localhost:10000";
+
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_URL;
 
 export interface ApiErrorResponse {
   success: false;

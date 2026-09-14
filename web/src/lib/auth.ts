@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "./api";
+
 const STORAGE_KEY = "rcpt_session_key";
 
 export function getSessionKey(): string | null {
@@ -21,7 +23,7 @@ export async function getOrCreateDemoSessionKey(): Promise<string> {
 
   try {
     const randomSuffix = Math.floor(Math.random() * 1000000);
-    const res = await fetch("http://localhost:10000/v1/auth/signup", {
+    const res = await fetch(`${API_BASE_URL}/v1/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: `guest-${Date.now()}-${randomSuffix}@receiptparser.local` })

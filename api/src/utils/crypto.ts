@@ -1,5 +1,5 @@
-﻿import crypto from "crypto";
-import bcrypt from "bcrypt";
+import crypto from "crypto";
+import bcrypt from "bcryptjs";
 
 const SALT_ROUNDS = 10;
 const KEY_PREFIX = "rcpt_live_";

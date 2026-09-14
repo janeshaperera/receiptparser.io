@@ -3,7 +3,7 @@ import { UserRepository, ApiKeyRepository } from "../db/repositories.js";
 import { ApiKeyService } from "../services/apiKey.service.js";
 import { emailService } from "../services/email.service.js";
 import { generateRecoveryToken, verifyRecoveryToken } from "../utils/crypto.js";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { SignupRequestSchema, LoginRequestSchema, RecoverRequestSchema, RecoverConfirmRequestSchema } from "../schemas/auth.schema.js";
 import { AppError } from "../schemas/receipt.schema.js";
 import { config } from "../config/index.js";

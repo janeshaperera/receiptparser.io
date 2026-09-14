@@ -1,27 +1,32 @@
-﻿import pg from "pg";
+import pg from "pg";
 import { config } from "../config/index.js";
 import { AppError } from "../schemas/receipt.schema.js";
 
-const { Pool } = pg;
+import { Client as NeonClient } from "@neondatabase/serverless";
 
-export let pool: pg.Pool | null = null;
+// Determine if running inside Cloudflare Workers or Node.js
+const isCloudflareWorker = typeof WebSocketPair !== "undefined" || (typeof navigator !== "undefined" && navigator.userAgent?.includes("Cloudflare-Workers"));
 
-if (!config.mockDb) {
-  if (!config.databaseUrl) {
-    console.error("FATAL: DATABASE_URL is not set and MOCK_DB is false.");
-  } else {
+export let pool: any = null;
+
+export function getPool(): any {
+  if (config.mockDb) {
+    return null;
+  }
+  if (!pool && config.databaseUrl && !isCloudflareWorker) {
     pool = new Pool({
       connectionString: config.databaseUrl,
       max: 20,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 5000,
-      ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined
+      ssl: config.databaseUrl.includes("supabase") || process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined
     });
 
-    pool.on("error", (err) => {
+    pool.on("error", (err: any) => {
       console.error("Unexpected error on idle PostgreSQL client", err);
     });
   }
+  return pool;
 }
 
 /**
@@ -35,12 +40,35 @@ export async function query<T extends pg.QueryResultRow = any>(
     throw new AppError("DATABASE_ERROR", "Direct query called in mock DB mode", 500);
   }
 
-  if (!pool) {
+  if (!config.databaseUrl) {
+    throw new AppError("DATABASE_ERROR", "Database connection is not configured or unavailable", 503);
+  }
+
+  // Cloudflare Workers runtime: create request-scoped client to satisfy Worker I/O rules
+  if (isCloudflareWorker) {
+    const client = new NeonClient(config.databaseUrl);
+    try {
+      await client.connect();
+      const result = await client.query<T>(text, params);
+      return result;
+    } catch (err: any) {
+      console.error("PostgreSQL Worker Query Error:", err.message);
+      throw new AppError("DATABASE_ERROR", "Database operation failed", 500, {
+        hint: err.message
+      });
+    } finally {
+      client.end().catch(() => {});
+    }
+  }
+
+  // Standard Node.js environment: use connection pool
+  const activePool = getPool();
+  if (!activePool) {
     throw new AppError("DATABASE_ERROR", "Database connection is not configured or unavailable", 503);
   }
 
   try {
-    return await pool.query<T>(text, params);
+    return await activePool.query<T>(text, params);
   } catch (err: any) {
     console.error("PostgreSQL Query Error:", err.message);
     throw new AppError("DATABASE_ERROR", "Database operation failed", 500, {
@@ -57,13 +85,13 @@ export async function checkDbHealth(): Promise<boolean> {
     return true; // Mock mode reports healthy
   }
 
-  if (!pool) {
+  if (!config.databaseUrl) {
     return false;
   }
 
   try {
-    const res = await pool.query("SELECT 1");
-    return res.rowCount !== null && res.rowCount > 0;
+    const res = await query("SELECT 1 as healthy");
+    return res.rows[0]?.healthy === 1;
   } catch {
     return false;
   }
