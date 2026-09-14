@@ -6,13 +6,25 @@ Targeted for US developers, expense-management software, bookkeeping platforms, 
 
 ---
 
-## Run ReceiptParser.io Locally
+## How to Run ReceiptParser.io (Windows 11)
 
-Follow these simple steps to run the complete project on your Windows laptop for development or college demonstration without needing Render or Railway:
+Running ReceiptParser.io requires **zero terminal commands**:
 
-### 1. Install Node.js
-Ensure Node.js (v20 or higher) is installed on your computer:
-- Download from [nodejs.org](https://nodejs.org).
+1. **Double-click `START_RECEIPTPARSER.bat`** in the project root folder.
+2. Your default browser will **open automatically** to **[http://localhost:3001](http://localhost:3001)**.
+3. **Use the website** to upload receipts, view structured data, or explore developer docs.
+
+> Both the backend API (`http://localhost:10000`) and the Next.js frontend (`http://localhost:3001`) start automatically in their own dedicated command windows and remain running until you close them.
+
+---
+
+## Alternative / Individual Launch Scripts
+
+If you prefer to start services individually, two standalone scripts are also provided in the project root:
+- **`start-local.bat`**: Starts only the Express + TypeScript API on `http://localhost:10000`.
+- **`start-web.bat`**: Starts only the Next.js frontend on `http://localhost:3001`.
+
+---
 
 ### 2. Open the project folder
 Open PowerShell, Command Prompt, or terminal and navigate to the project:
