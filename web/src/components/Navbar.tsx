@@ -1,20 +1,20 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useState } from "react";
-import { Receipt, Menu, X, Terminal, ArrowRight } from "lucide-react";
+import { Receipt, Menu, X, ArrowRight } from "lucide-react";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-800/80 bg-[#090d16]/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-slate-800/80 bg-[#090d16]/85 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
             <Receipt className="w-5 h-5 text-white" />
           </div>
-          <span className="text-lg font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+          <span className="text-lg font-bold tracking-tight text-white">
             ReceiptParser<span className="text-cyan-400">.io</span>
           </span>
         </Link>
@@ -24,19 +24,18 @@ export default function Navbar() {
           <Link href="/#how-it-works" className="hover:text-white transition-colors">
             How it works
           </Link>
-          <Link href="/#try-it" className="hover:text-white transition-colors">
-            Try It
+          <Link href="/try" className="hover:text-cyan-300 text-cyan-400 font-semibold transition-colors">
+            Try it
           </Link>
           <Link href="/#pricing" className="hover:text-white transition-colors">
             Pricing
           </Link>
-          <Link href="/docs" className="hover:text-white transition-colors flex items-center gap-1.5">
-            <Terminal className="w-4 h-4 text-cyan-400" />
+          <Link href="/docs" className="hover:text-white transition-colors">
             Documentation
           </Link>
         </nav>
 
-        {/* CTA Buttons */}
+        {/* Right CTA buttons */}
         <div className="hidden md:flex items-center gap-4">
           <Link
             href="/login"
@@ -46,14 +45,14 @@ export default function Navbar() {
           </Link>
           <Link
             href="/signup"
-            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition-all shadow-md shadow-cyan-500/20 active:scale-[0.98]"
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition-all shadow-md shadow-cyan-500/20 active:scale-[0.98]"
           >
             Get API Key
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
 
-        {/* Mobile menu button */}
+        {/* Mobile menu toggle */}
         <div className="md:hidden">
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -76,11 +75,11 @@ export default function Navbar() {
             How it works
           </Link>
           <Link
-            href="/#try-it"
+            href="/try"
             onClick={() => setMobileOpen(false)}
-            className="block text-sm font-medium text-slate-300 hover:text-white"
+            className="block text-sm font-semibold text-cyan-400 hover:text-cyan-300"
           >
-            Try It
+            Try it
           </Link>
           <Link
             href="/#pricing"
@@ -107,7 +106,7 @@ export default function Navbar() {
             <Link
               href="/signup"
               onClick={() => setMobileOpen(false)}
-              className="text-center py-2 rounded-lg text-sm font-semibold bg-cyan-500 text-slate-950 hover:bg-cyan-400"
+              className="text-center py-2 rounded-xl text-sm font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400"
             >
               Get API Key
             </Link>
