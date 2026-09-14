@@ -11,7 +11,10 @@ interface ReceiptUploadExperienceProps {
   onSuccess?: (data: ParsedReceiptData) => void;
 }
 
-export default function ReceiptUploadExperience({ defaultApiKey = "" }: ReceiptUploadExperienceProps) {
+export default function ReceiptUploadExperience({
+  defaultApiKey = "",
+  onSuccess
+}: ReceiptUploadExperienceProps) {
   const [apiKey, setApiKey] = useState(defaultApiKey);
   const [showKeyInput, setShowKeyInput] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -123,6 +126,9 @@ export default function ReceiptUploadExperience({ defaultApiKey = "" }: ReceiptU
 
       const data = await api.parseReceipt(keyToUse, file);
       setResult(data);
+      if (onSuccess) {
+        onSuccess(data);
+      }
     } catch (err: any) {
       clearTimeout(step1);
       clearTimeout(step2);

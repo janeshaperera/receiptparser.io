@@ -148,20 +148,20 @@ export default function ReceiptResultsView({ data: initialData, onReset }: Recei
 
           <button
             onClick={handleDownloadJson}
-            className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors flex items-center gap-1.5 border border-slate-700"
+            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors flex items-center gap-1.5 border border-slate-700"
             title="Download formatted JSON"
           >
-            <Download className="w-3.5 h-3.5 text-slate-400" />
-            <span>JSON</span>
+            <Download className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Export JSON</span>
           </button>
 
           <button
             onClick={handleDownloadCsv}
-            className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors flex items-center gap-1.5 border border-slate-700"
+            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors flex items-center gap-1.5 border border-slate-700"
             title="Download spreadsheet CSV"
           >
-            <FileText className="w-3.5 h-3.5 text-slate-400" />
-            <span>CSV</span>
+            <FileText className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Export CSV</span>
           </button>
 
           <button

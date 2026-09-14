@@ -5,21 +5,25 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import ReceiptUploadExperience from "@/components/ReceiptUploadExperience";
 import UsageChart from "@/components/UsageChart";
 import { api, ApiClientError } from "@/lib/api";
 import { getSessionKey, clearSessionKey, maskApiKey } from "@/lib/auth";
 import {
-  Key,
-  Copy,
-  Check,
-  Zap,
+  UploadCloud,
+  CheckCircle2,
   TrendingUp,
   CreditCard,
   LogOut,
   ExternalLink,
   Terminal,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Key,
+  Copy,
+  Check,
+  Sparkles,
+  ShieldCheck
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -32,6 +36,7 @@ export default function DashboardPage() {
   const [copied, setCopied] = useState(false);
   const [billingLoading, setBillingLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   useEffect(() => {
     const key = getSessionKey();
@@ -47,7 +52,7 @@ export default function DashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      // 1. Verify key
+      // 1. Verify user profile
       const verifyRes = await api.verifyKey(key);
       setUser(verifyRes.user);
 
@@ -55,7 +60,7 @@ export default function DashboardPage() {
       const usageRes = await api.getUsage(key);
       setUsage(usageRes);
 
-      // 3. Fetch 30-day daily usage breakdown
+      // 3. Fetch 30-day activity
       const dailyRes = await api.getDailyUsage(key);
       setDailyUsage(dailyRes.days || []);
     } catch (err: any) {
@@ -63,7 +68,7 @@ export default function DashboardPage() {
         clearSessionKey();
         router.push("/login");
       } else {
-        setError(err.message || "Failed to load dashboard telemetry.");
+        setError(err.message || "Failed to load account information.");
       }
     } finally {
       setLoading(false);
@@ -92,7 +97,7 @@ export default function DashboardPage() {
         window.location.href = res.checkout_url;
       }
     } catch (err: any) {
-      setError(err.message || "Unable to initiate Stripe checkout.");
+      setError(err.message || "Unable to initiate checkout.");
       setBillingLoading(false);
     }
   };
@@ -118,7 +123,7 @@ export default function DashboardPage() {
         <Navbar />
         <main className="flex-1 flex flex-col items-center justify-center p-8 space-y-4">
           <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
-          <p className="text-slate-400 text-sm font-mono">Loading developer dashboard...</p>
+          <p className="text-slate-400 text-sm">Loading your dashboard...</p>
         </main>
         <Footer />
       </>
@@ -135,32 +140,33 @@ export default function DashboardPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-        {/* TOP BAR */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {/* WELCOME BANNER & PLAN STATUS */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-3">
-              Developer Dashboard
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold uppercase bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                {plan} plan
-              </span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/25 text-cyan-300 text-xs font-semibold mb-2">
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Ready to parse receipts</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-3">
+              Welcome back{user?.name ? `, ${user.name}` : ""}
             </h1>
             <p className="text-sm text-slate-400 mt-1">
-              Account: <span className="font-mono text-slate-300">{user?.email}</span>
+              Signed in as <strong className="text-slate-200">{user?.email}</strong>
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <Link
-              href="/docs"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-700 bg-slate-900/60 hover:bg-slate-800 text-slate-200 text-xs font-medium transition-colors"
+            <a
+              href="#upload-box"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition-all shadow-md shadow-cyan-500/20"
             >
-              <Terminal className="w-3.5 h-3.5 text-cyan-400" />
-              API Docs
-            </Link>
+              <UploadCloud className="w-4 h-4" />
+              Upload Receipt
+            </a>
             <button
               onClick={handleLogout}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-800 hover:bg-slate-900 text-slate-400 hover:text-slate-200 text-xs font-medium transition-colors"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-800 hover:bg-slate-900 text-slate-400 hover:text-slate-200 text-xs font-medium transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />
               Sign out
@@ -175,103 +181,98 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* METRICS & API KEY ROW */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* API Key Box */}
-          <div className="rounded-xl border border-slate-800 bg-[#0d131f] p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono uppercase text-slate-400 font-semibold flex items-center gap-1.5">
-                <Key className="w-4 h-4 text-cyan-400" />
-                Live API Key
-              </span>
-              <span className="text-[11px] text-slate-500 font-mono">Masked</span>
-            </div>
-            <div className="p-3 rounded-lg bg-slate-900/90 border border-slate-800 font-mono text-xs text-cyan-300 break-all select-all flex items-center justify-between">
-              <span>{apiKey ? maskApiKey(apiKey) : "••••••••••••"}</span>
-              <button
-                onClick={handleCopyKey}
-                className="ml-2 p-1.5 text-slate-400 hover:text-white rounded bg-slate-800 hover:bg-slate-700 transition-colors shrink-0"
-                title="Copy API key"
-              >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              </button>
-            </div>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Authenticate all requests with header: <br />
-              <code className="text-slate-400 font-mono text-[11px]">Authorization: Bearer rcpt_live_...</code>
+        {/* 1. PRIMARY HERO ACTION: UPLOAD RECEIPT SECTION */}
+        <section id="upload-box" className="scroll-mt-20">
+          <div className="text-center max-w-xl mx-auto mb-6">
+            <h2 className="text-xl font-bold text-white">Upload a Receipt or Invoice</h2>
+            <p className="text-xs sm:text-sm text-slate-400 mt-1">
+              Drop an image or PDF below. We automatically extract items, taxes, totals, and let you export JSON or CSV.
             </p>
           </div>
 
-          {/* Quota Progress */}
-          <div className="rounded-xl border border-slate-800 bg-[#0d131f] p-6 space-y-4 md:col-span-2 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-mono uppercase text-slate-400 font-semibold flex items-center gap-1.5">
-                  <TrendingUp className="w-4 h-4 text-cyan-400" />
-                  Monthly Quota ({usage?.period || "Current Period"})
-                </span>
-                <span className="text-xs font-mono font-bold text-white">
-                  {used.toLocaleString()} / {limit.toLocaleString()} receipts ({percentage}%)
-                </span>
-              </div>
+          {/* Self-contained ReceiptUploadExperience with user's live session */}
+          <ReceiptUploadExperience
+            defaultApiKey={apiKey || ""}
+            onSuccess={() => {
+              if (apiKey) {
+                // Refresh usage metrics after parsing
+                loadDashboardData(apiKey);
+              }
+            }}
+          />
+        </section>
 
-              {/* Progress Bar */}
-              <div className="w-full h-3 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
-                <div
-                  style={{ width: `${percentage}%` }}
-                  className={`h-full transition-all duration-500 ${
-                    percentage > 85 ? "bg-amber-500" : "bg-cyan-500"
-                  }`}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-4 border-t border-slate-800/80 text-xs">
-              <div>
-                <span className="text-slate-500 block">Plan Tier</span>
-                <span className="font-semibold text-slate-200 capitalize">{plan}</span>
-              </div>
-              <div>
-                <span className="text-slate-500 block">Monthly Limit</span>
-                <span className="font-semibold text-slate-200">{limit.toLocaleString()}</span>
-              </div>
-              <div>
-                <span className="text-slate-500 block">Used</span>
-                <span className="font-semibold text-cyan-400">{used.toLocaleString()}</span>
-              </div>
-              <div>
-                <span className="text-slate-500 block">Remaining</span>
-                <span className="font-semibold text-emerald-400">{remaining.toLocaleString()}</span>
-              </div>
-              <div>
-                <span className="text-slate-500 block">Reset Date</span>
-                <span className="font-semibold text-slate-300 font-mono text-[11px]">{resetDate}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 30-DAY CHART SECTION */}
-        <div className="rounded-xl border border-slate-800 bg-[#0d131f] p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-200">
-              30-Day Daily Request Volume
-            </h2>
-            <span className="text-xs font-mono text-slate-500">Live Telemetry</span>
-          </div>
-          <UsageChart days={dailyUsage} />
-        </div>
-
-        {/* BILLING ACTIONS */}
-        <div className="rounded-xl border border-slate-800 bg-[#0d131f] p-6 space-y-6">
+        {/* 2. MONTHLY USAGE & PLAN QUOTA */}
+        <section className="rounded-2xl border border-slate-800 bg-[#0d131f] p-6 sm:p-7 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-cyan-400" />
-                Subscription & Billing Management
+              <span className="text-xs font-mono uppercase text-cyan-400 font-bold tracking-wider">
+                Monthly Usage
+              </span>
+              <h2 className="text-xl font-bold text-white mt-0.5">
+                Receipts Processed this Month
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
+                {plan} Plan
+              </span>
+            </div>
+          </div>
+
+          {/* Quota Progress Bar */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-400 font-medium">
+                <strong>{used.toLocaleString()}</strong> of <strong>{limit.toLocaleString()}</strong> receipts used
+              </span>
+              <span className="text-white font-bold font-mono">
+                {remaining.toLocaleString()} receipts remaining
+              </span>
+            </div>
+            <div className="w-full h-3 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+              <div
+                style={{ width: `${percentage}%` }}
+                className={`h-full transition-all duration-500 ${
+                  percentage > 85 ? "bg-amber-500" : "bg-cyan-500"
+                }`}
+              />
+            </div>
+          </div>
+
+          {/* Quick Metrics Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-slate-800/80 text-xs">
+            <div className="p-3 rounded-xl bg-slate-900/50 border border-slate-800/60">
+              <span className="text-slate-400 block text-[11px]">Current Plan</span>
+              <span className="font-bold text-white capitalize text-sm">{plan}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-slate-900/50 border border-slate-800/60">
+              <span className="text-slate-400 block text-[11px]">Monthly Limit</span>
+              <span className="font-bold text-white text-sm">{limit.toLocaleString()}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-slate-900/50 border border-slate-800/60">
+              <span className="text-slate-400 block text-[11px]">Used this Month</span>
+              <span className="font-bold text-cyan-400 text-sm">{used.toLocaleString()}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-slate-900/50 border border-slate-800/60">
+              <span className="text-slate-400 block text-[11px]">Quota Resets On</span>
+              <span className="font-bold text-slate-300 font-mono text-xs">{resetDate}</span>
+            </div>
+          </div>
+        </section>
+
+        {/* 3. PLAN UPGRADES / SUBSCRIPTIONS */}
+        <section className="rounded-2xl border border-slate-800 bg-[#0d131f] p-6 sm:p-7 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span className="text-xs font-mono uppercase text-cyan-400 font-bold tracking-wider">
+                Flexible Plans
+              </span>
+              <h2 className="text-xl font-bold text-white mt-0.5">
+                Need more monthly receipts?
               </h2>
               <p className="text-xs text-slate-400 mt-1">
-                Manage your payment methods, change tiers, or cancel your subscription via Stripe Customer Portal.
+                Hard monthly limits ensure no surprise charges. Upgrade or downgrade anytime.
               </p>
             </div>
 
@@ -279,65 +280,146 @@ export default function DashboardPage() {
               <button
                 onClick={handlePortal}
                 disabled={billingLoading}
-                className="px-4 py-2 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0"
+                className="px-4 py-2 rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0"
               >
-                Manage Billing on Stripe
-                <ExternalLink className="w-3.5 h-3.5" />
+                <CreditCard className="w-3.5 h-3.5 text-cyan-400" />
+                Manage Billing & Invoices
+                <ExternalLink className="w-3 h-3 text-slate-400" />
               </button>
             )}
           </div>
 
-          {/* Upgrade Cards */}
-          {plan !== "business" && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-800/80">
-              {plan === "free" && (
-                <div className="p-4 rounded-lg border border-slate-800 bg-slate-900/60 flex flex-col justify-between space-y-3">
-                  <div>
-                    <span className="text-xs font-mono text-slate-300 font-bold uppercase">Starter Plan</span>
-                    <p className="text-xs text-slate-400 mt-0.5">250 receipts/mo • $5/mo</p>
-                  </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+            {/* Starter Plan */}
+            <div className="p-5 rounded-xl border border-slate-800 bg-slate-900/60 flex flex-col justify-between space-y-4">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono uppercase font-bold text-slate-300">Starter</span>
+                  <span className="text-sm font-extrabold text-white">$5<span className="text-xs text-slate-400 font-normal">/mo</span></span>
+                </div>
+                <p className="text-xs text-slate-400 mt-2">
+                  <strong>250 receipts/month</strong>. Perfect for personal finances, freelancers, and small contractors.
+                </p>
+              </div>
+              <button
+                onClick={() => handleUpgrade("starter")}
+                disabled={billingLoading || plan === "starter"}
+                className={`w-full py-2 rounded-xl text-xs font-bold transition-all ${
+                  plan === "starter"
+                    ? "bg-slate-800 text-slate-400 cursor-default"
+                    : "border border-slate-700 hover:bg-slate-800 text-slate-200"
+                }`}
+              >
+                {plan === "starter" ? "Current Plan" : "Upgrade to Starter ($5/mo)"}
+              </button>
+            </div>
+
+            {/* Pro Plan */}
+            <div className="p-5 rounded-xl border-2 border-cyan-500/60 bg-[#0d1424] flex flex-col justify-between space-y-4 relative shadow-lg shadow-cyan-500/10">
+              <div className="absolute -top-2.5 right-4 px-2 py-0.5 bg-cyan-500 text-slate-950 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                Popular
+              </div>
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono uppercase font-bold text-cyan-400">Pro</span>
+                  <span className="text-sm font-extrabold text-white">$15<span className="text-xs text-slate-400 font-normal">/mo</span></span>
+                </div>
+                <p className="text-xs text-slate-300 mt-2">
+                  <strong>1,000 receipts/month</strong>. For accounting firms, small businesses, and volume expense tracking.
+                </p>
+              </div>
+              <button
+                onClick={() => handleUpgrade("pro")}
+                disabled={billingLoading || plan === "pro"}
+                className={`w-full py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-cyan-500/20 ${
+                  plan === "pro"
+                    ? "bg-slate-800 text-slate-400 cursor-default"
+                    : "bg-cyan-500 hover:bg-cyan-400 text-slate-950"
+                }`}
+              >
+                {plan === "pro" ? "Current Plan" : "Upgrade to Pro ($15/mo)"}
+              </button>
+            </div>
+
+            {/* Business Plan */}
+            <div className="p-5 rounded-xl border border-slate-800 bg-slate-900/60 flex flex-col justify-between space-y-4">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono uppercase font-bold text-slate-300">Business</span>
+                  <span className="text-sm font-extrabold text-white">$39<span className="text-xs text-slate-400 font-normal">/mo</span></span>
+                </div>
+                <p className="text-xs text-slate-400 mt-2">
+                  <strong>5,000 receipts/month</strong>. High-volume business expense processing with higher rate limits.
+                </p>
+              </div>
+              <button
+                onClick={() => handleUpgrade("business")}
+                disabled={billingLoading || plan === "business"}
+                className={`w-full py-2 rounded-xl text-xs font-bold transition-all ${
+                  plan === "business"
+                    ? "bg-slate-800 text-slate-400 cursor-default"
+                    : "border border-slate-700 hover:bg-slate-800 text-slate-200"
+                }`}
+              >
+                {plan === "business" ? "Current Plan" : "Upgrade to Business ($39/mo)"}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* 4. OPTIONAL / ADVANCED DEVELOPER SETTINGS (COLLAPSIBLE) */}
+        <section className="rounded-2xl border border-slate-800/80 bg-[#0a0f19] p-5 space-y-4">
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="w-full flex items-center justify-between text-left text-xs text-slate-400 hover:text-slate-200 transition-colors"
+          >
+            <span className="font-semibold flex items-center gap-2">
+              <Terminal className="w-4 h-4 text-cyan-400" />
+              Developer Settings & API Key
+            </span>
+            <span className="text-[11px] text-cyan-400">
+              {showAdvanced ? "Hide settings" : "Click to view API key & technical docs"}
+            </span>
+          </button>
+
+          {showAdvanced && (
+            <div className="pt-4 border-t border-slate-800 space-y-6">
+              {/* API Key Box */}
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  Your Account API Key
+                </label>
+                <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 font-mono text-xs text-cyan-300 break-all select-all flex items-center justify-between">
+                  <span>{apiKey ? maskApiKey(apiKey) : "••••••••••••"}</span>
                   <button
-                    onClick={() => handleUpgrade("starter")}
-                    disabled={billingLoading}
-                    className="w-full py-1.5 rounded-lg border border-slate-700 hover:bg-slate-800 text-slate-200 text-xs font-semibold transition-all"
+                    onClick={handleCopyKey}
+                    className="ml-2 p-1.5 text-slate-400 hover:text-white rounded bg-slate-800 hover:bg-slate-700 transition-colors shrink-0"
+                    title="Copy API key"
                   >
-                    Upgrade to Starter
+                    {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                   </button>
                 </div>
-              )}
+                <p className="text-[11px] text-slate-500">
+                  Use this key to integrate receipt parsing directly into your own applications.
+                </p>
+              </div>
 
-              {(plan === "free" || plan === "starter") && (
-                <div className="p-4 rounded-lg border border-cyan-500/30 bg-cyan-500/5 flex flex-col justify-between space-y-3">
-                  <div>
-                    <span className="text-xs font-mono text-cyan-400 font-bold uppercase">Pro Plan</span>
-                    <p className="text-xs text-slate-300 mt-0.5">1,000 receipts/mo • $15/mo</p>
-                  </div>
-                  <button
-                    onClick={() => handleUpgrade("pro")}
-                    disabled={billingLoading}
-                    className="w-full py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition-all shadow-sm shadow-cyan-500/20"
-                  >
-                    Upgrade to Pro
-                  </button>
+              {/* 30-Day Activity Chart */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-semibold text-slate-300">
+                    30-Day Request Volume
+                  </h3>
+                  <Link href="/docs" className="text-xs text-cyan-400 hover:underline">
+                    View API documentation &rarr;
+                  </Link>
                 </div>
-              )}
-
-              <div className="p-4 rounded-lg border border-slate-800 bg-slate-900/60 flex flex-col justify-between space-y-3">
-                <div>
-                  <span className="text-xs font-mono text-slate-300 font-bold uppercase">Business Plan</span>
-                  <p className="text-xs text-slate-400 mt-0.5">5,000 receipts/mo • $39/mo</p>
-                </div>
-                <button
-                  onClick={() => handleUpgrade("business")}
-                  disabled={billingLoading}
-                  className="w-full py-1.5 rounded-lg border border-slate-700 hover:bg-slate-800 text-slate-200 text-xs font-semibold transition-all"
-                >
-                  Upgrade to Business
-                </button>
+                <UsageChart days={dailyUsage} />
               </div>
             </div>
           )}
-        </div>
+        </section>
       </main>
       <Footer />
     </>
