@@ -1,4 +1,4 @@
-﻿import Stripe from "stripe";
+import Stripe from "stripe";
 import { config } from "../config/index.js";
 import { AppError } from "../schemas/receipt.schema.js";
 import { PlanTier, PLANS } from "../schemas/billing.schema.js";
@@ -16,12 +16,15 @@ export class StripeService {
   /**
    * Helper to map plan tier to configured Price ID
    */
-  getPriceIdForPlan(plan: "starter" | "pro"): string {
+  getPriceIdForPlan(plan: "starter" | "pro" | "business"): string {
     if (plan === "starter") {
       return config.stripeStarterPriceId;
     }
     if (plan === "pro") {
       return config.stripeProPriceId;
+    }
+    if (plan === "business") {
+      return config.stripeBusinessPriceId;
     }
     throw new AppError("INVALID_PLAN", `Invalid plan: ${plan}`, 400);
   }
@@ -72,7 +75,7 @@ export class StripeService {
     userId: string;
     email: string;
     apiKeyId: string;
-    plan: "starter" | "pro";
+    plan: "starter" | "pro" | "business";
   }): Promise<{ url: string; sessionId: string }> {
     const priceId = this.getPriceIdForPlan(params.plan);
     const customerId = await this.getOrCreateCustomer(params.userId, params.email);
@@ -195,6 +198,7 @@ export class StripeService {
     if (!priceId) return "free";
     if (priceId === config.stripeStarterPriceId) return "starter";
     if (priceId === config.stripeProPriceId) return "pro";
+    if (priceId === config.stripeBusinessPriceId) return "business";
     return "free";
   }
 }

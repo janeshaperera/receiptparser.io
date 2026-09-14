@@ -1,4 +1,4 @@
-﻿import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 import { UserRepository, UsageRepository } from "../db/repositories.js";
 import { PLANS } from "../schemas/billing.schema.js";
 import { AppError } from "../schemas/receipt.schema.js";
@@ -26,15 +26,22 @@ export async function checkPlanUsageLimit(
     const monthlyUsage = await UsageRepository.getMonthlyUsageCount(userId);
 
     if (monthlyUsage >= planConfig.monthlyLimit) {
+      // Calculate next monthly reset date (1st of next month)
+      const now = new Date();
+      const nextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+      const resetDate = nextMonth.toISOString().split("T")[0];
+
       return next(
         new AppError(
           "PLAN_LIMIT_EXCEEDED",
-          "Monthly request limit exceeded for your plan.",
+          `You've used all ${planConfig.monthlyLimit} ${planTier} receipts this month.`,
           429,
           {
             plan: planTier,
             used: monthlyUsage,
             limit: planConfig.monthlyLimit,
+            remaining: 0,
+            reset_date: resetDate,
             upgrade_url: "/v1/billing/checkout"
           }
         )

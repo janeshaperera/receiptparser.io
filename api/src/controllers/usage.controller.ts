@@ -1,4 +1,4 @@
-﻿import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 import { UsageRepository, UserRepository } from "../db/repositories.js";
 import { PLANS } from "../schemas/billing.schema.js";
 
@@ -16,6 +16,8 @@ export class UsageController {
 
       const now = new Date();
       const currentPeriod = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+      const nextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+      const resetDate = nextMonth.toISOString().split("T")[0];
 
       res.status(200).json({
         user_id: userId,
@@ -24,7 +26,8 @@ export class UsageController {
         total_requests: totalRequests,
         limit: planConfig.monthlyLimit,
         remaining,
-        period: currentPeriod
+        period: currentPeriod,
+        reset_date: resetDate
       });
     } catch (error) {
       next(error);

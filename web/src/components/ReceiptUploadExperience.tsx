@@ -133,7 +133,8 @@ export default function ReceiptUploadExperience({ defaultApiKey = "" }: ReceiptU
           setError("Your session or API key is invalid. Please get a new free key.");
           setShowKeyInput(true);
         } else if (err.code === "PLAN_LIMIT_EXCEEDED") {
-          setError("Your monthly free receipt limit (50 receipts) has been reached.");
+          const resetNotice = err.details?.reset_date ? ` Quota resets on ${err.details.reset_date}.` : "";
+          setError(`You've reached your monthly receipt limit.${resetNotice} Please upgrade your plan for higher monthly limits.`);
         } else if (err.code === "INVALID_FILE_TYPE") {
           setError("We can't read this file type. Please upload a JPG, PNG, WEBP, or PDF.");
         } else if (err.code === "FILE_TOO_LARGE") {
@@ -291,7 +292,7 @@ export default function ReceiptUploadExperience({ defaultApiKey = "" }: ReceiptU
                   <p className="text-[11px] text-slate-500">
                     Don&apos;t have one?{" "}
                     <a href="/signup" className="text-cyan-400 hover:underline">
-                      Get 50 free requests in 5 seconds &rarr;
+                      Get 20 free receipts every month &rarr;
                     </a>
                   </p>
                 </div>

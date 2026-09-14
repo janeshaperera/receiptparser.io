@@ -1,6 +1,6 @@
-﻿import { z } from "zod";
+import { z } from "zod";
 
-export type PlanTier = "free" | "starter" | "pro";
+export type PlanTier = "free" | "starter" | "pro" | "business";
 
 export interface PlanConfig {
   name: PlanTier;
@@ -11,24 +11,29 @@ export interface PlanConfig {
 export const PLANS: Record<PlanTier, PlanConfig> = {
   free: {
     name: "free",
-    monthlyLimit: 50,
+    monthlyLimit: 20,
     priceMonthlyUsd: 0
   },
   starter: {
     name: "starter",
-    monthlyLimit: 1000,
-    priceMonthlyUsd: 29
+    monthlyLimit: 250,
+    priceMonthlyUsd: 5
   },
   pro: {
     name: "pro",
-    monthlyLimit: 10000,
-    priceMonthlyUsd: 99
+    monthlyLimit: 1000,
+    priceMonthlyUsd: 15
+  },
+  business: {
+    name: "business",
+    monthlyLimit: 5000,
+    priceMonthlyUsd: 39
   }
 };
 
 export const CheckoutRequestSchema = z.object({
-  plan: z.enum(["starter", "pro"], {
-    errorMap: () => ({ message: "Plan must be either 'starter' or 'pro'. Free plan cannot be purchased via Checkout." })
+  plan: z.enum(["starter", "pro", "business"], {
+    errorMap: () => ({ message: "Plan must be 'starter', 'pro', or 'business'. Free plan cannot be purchased via Checkout." })
   })
 });
 

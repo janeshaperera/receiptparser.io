@@ -29,14 +29,14 @@ export default function LandingPage() {
               </div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
-                Turn any receipt into{" "}
+                Turn receipts into{" "}
                 <span className="bg-gradient-to-r from-cyan-400 via-sky-300 to-blue-500 bg-clip-text text-transparent">
-                  organized data.
+                  structured data.
                 </span>
               </h1>
 
               <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
-                Upload a receipt and ReceiptParser.io automatically extracts the merchant, date, items, prices, tax, and total.
+                Upload a receipt or invoice and get clean, organized data in seconds.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
@@ -44,20 +44,20 @@ export default function LandingPage() {
                   href="#upload-receipt"
                   className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-sm sm:text-base transition-all shadow-xl shadow-cyan-500/25 active:scale-[0.98] flex items-center justify-center gap-2"
                 >
-                  Upload a Receipt
+                  Try it free
                   <ArrowRight className="w-4 h-4" />
                 </a>
                 <a
                   href="#how-it-works"
                   className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-slate-700 bg-slate-900/60 hover:bg-slate-800 text-slate-200 font-semibold text-sm transition-all flex items-center justify-center gap-2"
                 >
-                  See How It Works
+                  See how it works
                 </a>
               </div>
 
               <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-8 text-xs text-slate-400 pt-3">
                 <span className="flex items-center gap-1.5">
-                  <CheckCircle className="w-4 h-4 text-emerald-400" /> 50 free receipts
+                  <CheckCircle className="w-4 h-4 text-emerald-400" /> 20 free receipts/mo
                 </span>
                 <span className="flex items-center gap-1.5">
                   <CheckCircle className="w-4 h-4 text-emerald-400" /> Instant results
@@ -230,119 +230,171 @@ export default function LandingPage() {
                 Simple Plans for Everyone
               </h2>
               <p className="text-slate-400 text-sm">
-                Start with 50 free receipts, upgrade whenever you need more volume.
+                Hard monthly limits. No surprise AI usage charges.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
               {/* FREE */}
-              <div className="rounded-2xl border border-slate-800 bg-[#090d16] p-8 flex flex-col justify-between hover:border-slate-700 transition-colors">
+              <div className="rounded-2xl border border-slate-800 bg-[#090d16] p-6 flex flex-col justify-between hover:border-slate-700 transition-colors">
                 <div className="space-y-4">
                   <span className="text-xs font-mono uppercase font-bold text-slate-400">
                     Free
                   </span>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-extrabold text-white">$0</span>
-                    <span className="text-sm text-slate-400">/month</span>
+                    <span className="text-3xl font-extrabold text-white">$0</span>
+                    <span className="text-xs text-slate-400">/month</span>
                   </div>
-                  <p className="text-sm text-slate-400">
-                    Great for occasional receipt scans and personal expenses.
+                  <p className="text-xs text-slate-400 min-h-[36px]">
+                    Occasional receipt scans and personal expense tracking.
                   </p>
-                  <div className="pt-4 border-t border-slate-800/80 space-y-3 text-sm text-slate-300">
-                    <div className="flex items-center gap-2.5">
-                      <CheckCircle className="w-4 h-4 text-cyan-400" />
-                      <span><strong>50 receipts</strong> / month</span>
+                  <div className="pt-4 border-t border-slate-800/80 space-y-2.5 text-xs text-slate-300">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <span><strong>20 receipts</strong> / month</span>
                     </div>
-                    <div className="flex items-center gap-2.5">
-                      <CheckCircle className="w-4 h-4 text-cyan-400" />
-                      <span>Instant OCR extraction</span>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <span>Basic receipt parsing</span>
                     </div>
-                    <div className="flex items-center gap-2.5">
-                      <CheckCircle className="w-4 h-4 text-cyan-400" />
-                      <span>No credit card required</span>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <span>JSON export</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <span>No credit card needed</span>
                     </div>
                   </div>
                 </div>
                 <Link
                   href="/signup"
-                  className="mt-8 w-full py-3 text-center rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-200 font-semibold text-sm transition-all"
+                  className="mt-6 w-full py-2.5 text-center rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-200 font-semibold text-xs transition-all"
                 >
                   Start Free
                 </Link>
               </div>
 
               {/* STARTER */}
-              <div className="rounded-2xl border-2 border-cyan-500/60 bg-[#0d1424] p-8 flex flex-col justify-between relative shadow-2xl shadow-cyan-500/10">
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 bg-cyan-500 text-slate-950 rounded-full text-xs font-bold tracking-wide uppercase">
-                  Most Popular
-                </div>
+              <div className="rounded-2xl border border-slate-800 bg-[#090d16] p-6 flex flex-col justify-between hover:border-slate-700 transition-colors">
                 <div className="space-y-4">
-                  <span className="text-xs font-mono uppercase font-bold text-cyan-400">
+                  <span className="text-xs font-mono uppercase font-bold text-slate-300">
                     Starter
                   </span>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-extrabold text-white">$29</span>
-                    <span className="text-sm text-slate-400">/month</span>
+                    <span className="text-3xl font-extrabold text-white">$5</span>
+                    <span className="text-xs text-slate-400">/month</span>
                   </div>
-                  <p className="text-sm text-slate-300">
-                    Ideal for small businesses, freelancers, and bookkeepers.
+                  <p className="text-xs text-slate-400 min-h-[36px]">
+                    Ideal for freelancers, contractors, and individuals.
                   </p>
-                  <div className="pt-4 border-t border-slate-800 space-y-3 text-sm text-slate-200">
-                    <div className="flex items-center gap-2.5">
-                      <CheckCircle className="w-4 h-4 text-cyan-400" />
-                      <span><strong>1,000 receipts</strong> / month</span>
+                  <div className="pt-4 border-t border-slate-800 space-y-2.5 text-xs text-slate-300">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <span><strong>250 receipts</strong> / month</span>
                     </div>
-                    <div className="flex items-center gap-2.5">
-                      <CheckCircle className="w-4 h-4 text-cyan-400" />
-                      <span>Math consistency verification</span>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <span>Receipt history</span>
                     </div>
-                    <div className="flex items-center gap-2.5">
-                      <CheckCircle className="w-4 h-4 text-cyan-400" />
-                      <span>Self-service billing & portal</span>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <span>CSV & JSON export</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <span>Stripe self-service portal</span>
                     </div>
                   </div>
                 </div>
                 <Link
                   href="/signup"
-                  className="mt-8 w-full py-3 text-center rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-sm transition-all shadow-md shadow-cyan-500/20"
+                  className="mt-6 w-full py-2.5 text-center rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-200 font-semibold text-xs transition-all"
                 >
-                  Get Started
+                  Get Starter
                 </Link>
               </div>
 
               {/* PRO */}
-              <div className="rounded-2xl border border-slate-800 bg-[#090d16] p-8 flex flex-col justify-between hover:border-slate-700 transition-colors">
+              <div className="rounded-2xl border-2 border-cyan-500/60 bg-[#0d1424] p-6 flex flex-col justify-between relative shadow-xl shadow-cyan-500/10">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-cyan-500 text-slate-950 rounded-full text-[10px] font-bold tracking-wide uppercase">
+                  Most Popular
+                </div>
                 <div className="space-y-4">
-                  <span className="text-xs font-mono uppercase font-bold text-slate-400">
+                  <span className="text-xs font-mono uppercase font-bold text-cyan-400">
                     Pro
                   </span>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-extrabold text-white">$99</span>
-                    <span className="text-sm text-slate-400">/month</span>
+                    <span className="text-3xl font-extrabold text-white">$15</span>
+                    <span className="text-xs text-slate-400">/month</span>
                   </div>
-                  <p className="text-sm text-slate-400">
-                    For accounting firms and high-volume business expense operations.
+                  <p className="text-xs text-slate-300 min-h-[36px]">
+                    For professionals, small teams, and power users.
                   </p>
-                  <div className="pt-4 border-t border-slate-800/80 space-y-3 text-sm text-slate-300">
-                    <div className="flex items-center gap-2.5">
-                      <CheckCircle className="w-4 h-4 text-cyan-400" />
-                      <span><strong>10,000 receipts</strong> / month</span>
+                  <div className="pt-4 border-t border-slate-800 space-y-2.5 text-xs text-slate-200">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <span><strong>1,000 receipts</strong> / month</span>
                     </div>
-                    <div className="flex items-center gap-2.5">
-                      <CheckCircle className="w-4 h-4 text-cyan-400" />
-                      <span>Priority throughput</span>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <span>Full API access</span>
                     </div>
-                    <div className="flex items-center gap-2.5">
-                      <CheckCircle className="w-4 h-4 text-cyan-400" />
-                      <span>High rate limits</span>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <span>Usage dashboard & telemetry</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <span>CSV & JSON export</span>
                     </div>
                   </div>
                 </div>
                 <Link
                   href="/signup"
-                  className="mt-8 w-full py-3 text-center rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-200 font-semibold text-sm transition-all"
+                  className="mt-6 w-full py-2.5 text-center rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition-all shadow-md shadow-cyan-500/20"
                 >
-                  Upgrade to Pro
+                  Get Pro
+                </Link>
+              </div>
+
+              {/* BUSINESS */}
+              <div className="rounded-2xl border border-slate-800 bg-[#090d16] p-6 flex flex-col justify-between hover:border-slate-700 transition-colors">
+                <div className="space-y-4">
+                  <span className="text-xs font-mono uppercase font-bold text-slate-300">
+                    Business
+                  </span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-extrabold text-white">$39</span>
+                    <span className="text-xs text-slate-400">/month</span>
+                  </div>
+                  <p className="text-xs text-slate-400 min-h-[36px]">
+                    For growing businesses, bookkeeping, and higher volumes.
+                  </p>
+                  <div className="pt-4 border-t border-slate-800/80 space-y-2.5 text-xs text-slate-300">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <span><strong>5,000 receipts</strong> / month</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <span>Full API access</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <span>Higher rate limits</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <span>Priority support</span>
+                    </div>
+                  </div>
+                </div>
+                <Link
+                  href="/signup"
+                  className="mt-6 w-full py-2.5 text-center rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-200 font-semibold text-xs transition-all"
+                >
+                  Get Business
                 </Link>
               </div>
             </div>

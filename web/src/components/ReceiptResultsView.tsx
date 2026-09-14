@@ -70,6 +70,49 @@ export default function ReceiptResultsView({ data: initialData, onReset }: Recei
     URL.revokeObjectURL(url);
   };
 
+  const handleDownloadCsv = () => {
+    const headers = ["Merchant", "Date", "Currency", "Item Description", "Quantity", "Unit Price", "Total Price", "Subtotal", "Tax", "Receipt Total"];
+    const rows = data.line_items.map((item) => [
+      `"${(data.vendor_name || "").replace(/"/g, '""')}"`,
+      `"${data.date || ""}"`,
+      `"${data.currency || ""}"`,
+      `"${(item.description || "").replace(/"/g, '""')}"`,
+      item.quantity,
+      item.unit_price.toFixed(2),
+      item.total_price.toFixed(2),
+      data.subtotal.toFixed(2),
+      data.tax.toFixed(2),
+      data.total.toFixed(2)
+    ]);
+
+    // If no line items, output a single summary row
+    if (rows.length === 0) {
+      rows.push([
+        `"${(data.vendor_name || "").replace(/"/g, '""')}"`,
+        `"${data.date || ""}"`,
+        `"${data.currency || ""}"`,
+        `""`,
+        0,
+        0,
+        0,
+        data.subtotal.toFixed(2),
+        data.tax.toFixed(2),
+        data.total.toFixed(2)
+      ]);
+    }
+
+    const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `receipt-${data.vendor_name.toLowerCase().replace(/[^a-z0-9]/g, "-") || "parsed"}-${data.date}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault();
     setData(editForm);
@@ -105,10 +148,20 @@ export default function ReceiptResultsView({ data: initialData, onReset }: Recei
 
           <button
             onClick={handleDownloadJson}
-            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors flex items-center gap-1.5 border border-slate-700"
+            className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors flex items-center gap-1.5 border border-slate-700"
+            title="Download formatted JSON"
           >
             <Download className="w-3.5 h-3.5 text-slate-400" />
-            <span>Download</span>
+            <span>JSON</span>
+          </button>
+
+          <button
+            onClick={handleDownloadCsv}
+            className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors flex items-center gap-1.5 border border-slate-700"
+            title="Download spreadsheet CSV"
+          >
+            <FileText className="w-3.5 h-3.5 text-slate-400" />
+            <span>CSV</span>
           </button>
 
           <button

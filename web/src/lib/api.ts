@@ -104,6 +104,7 @@ export const api = {
       limit: number;
       remaining: number;
       period: string;
+      reset_date?: string;
     }>(res);
   },
 
@@ -118,7 +119,7 @@ export const api = {
     }>(res);
   },
 
-  async createCheckout(apiKey: string, plan: "starter" | "pro") {
+  async createCheckout(apiKey: string, plan: "starter" | "pro" | "business") {
     const res = await fetch(`${API_BASE_URL}/v1/billing/checkout`, {
       method: "POST",
       headers: {

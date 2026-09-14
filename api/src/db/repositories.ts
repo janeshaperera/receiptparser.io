@@ -36,6 +36,9 @@ export interface UsageLogRecord {
   mime_type: string;
   status: string;
   duration_ms: number;
+  model?: string;
+  input_tokens?: number;
+  output_tokens?: number;
   created_at: Date;
 }
 
@@ -261,6 +264,9 @@ export class UsageRepository {
     mime_type: string;
     status: string;
     duration_ms: number;
+    model?: string;
+    input_tokens?: number;
+    output_tokens?: number;
   }): Promise<UsageLogRecord> {
     if (config.mockDb) {
       const log: UsageLogRecord = {
@@ -273,8 +279,8 @@ export class UsageRepository {
     }
 
     const res = await query<UsageLogRecord>(
-      `INSERT INTO usage_logs (user_id, api_key_id, file_name, file_size_bytes, mime_type, status, duration_ms)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO usage_logs (user_id, api_key_id, file_name, file_size_bytes, mime_type, status, duration_ms, model, input_tokens, output_tokens)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
       [
         data.user_id,
@@ -283,7 +289,10 @@ export class UsageRepository {
         data.file_size_bytes,
         data.mime_type,
         data.status,
-        data.duration_ms
+        data.duration_ms,
+        data.model || config.geminiModel,
+        data.input_tokens || 0,
+        data.output_tokens || 0
       ]
     );
     return res.rows[0];
@@ -349,6 +358,158 @@ export class UsageRepository {
       [userId, days]
     );
     return res.rows.map((r: { date: string; count: string }) => ({ date: r.date, count: parseInt(r.count, 10) }));
+  }
+
+  static async getAdminStats(): Promise<{
+    total_users: number;
+    free_users: number;
+    paid_users: number;
+    receipts_processed_this_month: number;
+    receipts_processed_all_time: number;
+    usage_by_plan: Record<string, number>;
+    gemini_requests: number;
+    failed_parsing_count: number;
+    input_tokens_total: number;
+    output_tokens_total: number;
+    token_usage_by_model: Record<string, { input_tokens: number; output_tokens: number }>;
+  }> {
+    if (config.mockDb) {
+      const allUsers = Array.from(mockStore.users.values());
+      const total_users = allUsers.length;
+      const free_users = allUsers.filter((u) => u.plan_tier === "free").length;
+      const paid_users = total_users - free_users;
+
+      const now = new Date();
+      const currentYear = now.getUTCFullYear();
+      const currentMonth = now.getUTCMonth();
+
+      let receipts_this_month = 0;
+      let receipts_all_time = 0;
+      let gemini_requests = 0;
+      let failed_parsing_count = 0;
+      let input_tokens_total = 0;
+      let output_tokens_total = 0;
+      const token_usage_by_model: Record<string, { input_tokens: number; output_tokens: number }> = {};
+      const usage_by_plan: Record<string, number> = { free: 0, starter: 0, pro: 0, business: 0 };
+
+      for (const log of mockStore.usageLogs) {
+        gemini_requests++;
+        const modelName = log.model || config.geminiModel;
+        const inTokens = log.input_tokens || 0;
+        const outTokens = log.output_tokens || 0;
+
+        input_tokens_total += inTokens;
+        output_tokens_total += outTokens;
+
+        if (!token_usage_by_model[modelName]) {
+          token_usage_by_model[modelName] = { input_tokens: 0, output_tokens: 0 };
+        }
+        token_usage_by_model[modelName].input_tokens += inTokens;
+        token_usage_by_model[modelName].output_tokens += outTokens;
+
+        if (log.status === "SUCCESS") {
+          receipts_all_time++;
+          const d = log.created_at;
+          if (d.getUTCFullYear() === currentYear && d.getUTCMonth() === currentMonth) {
+            receipts_this_month++;
+          }
+          const user = mockStore.users.get(log.user_id);
+          const tier = user?.plan_tier || "free";
+          usage_by_plan[tier] = (usage_by_plan[tier] || 0) + 1;
+        } else {
+          failed_parsing_count++;
+        }
+      }
+
+      return {
+        total_users,
+        free_users,
+        paid_users,
+        receipts_processed_this_month: receipts_this_month,
+        receipts_processed_all_time: receipts_all_time,
+        usage_by_plan,
+        gemini_requests,
+        failed_parsing_count,
+        input_tokens_total,
+        output_tokens_total,
+        token_usage_by_model
+      };
+    }
+
+    // Live PostgreSQL queries
+    const usersCountRes = await query<{
+      total: string;
+      free: string;
+      paid: string;
+    }>(`
+      SELECT
+        COUNT(*) as total,
+        COUNT(*) FILTER (WHERE plan_tier = 'free') as free,
+        COUNT(*) FILTER (WHERE plan_tier != 'free') as paid
+      FROM users
+    `);
+
+    const usageCountRes = await query<{
+      this_month: string;
+      all_time: string;
+      gemini_requests: string;
+      failed_count: string;
+      input_tokens: string;
+      output_tokens: string;
+    }>(`
+      SELECT
+        COUNT(*) FILTER (WHERE status = 'SUCCESS' AND created_at >= date_trunc('month', CURRENT_TIMESTAMP)) as this_month,
+        COUNT(*) FILTER (WHERE status = 'SUCCESS') as all_time,
+        COUNT(*) as gemini_requests,
+        COUNT(*) FILTER (WHERE status != 'SUCCESS') as failed_count,
+        COALESCE(SUM(input_tokens), 0) as input_tokens,
+        COALESCE(SUM(output_tokens), 0) as output_tokens
+      FROM usage_logs
+    `);
+
+    const planBreakdownRes = await query<{ plan_tier: string; count: string }>(`
+      SELECT u.plan_tier, COUNT(*) as count
+      FROM usage_logs l
+      JOIN users u ON l.user_id = u.id
+      WHERE l.status = 'SUCCESS'
+      GROUP BY u.plan_tier
+    `);
+
+    const modelBreakdownRes = await query<{ model: string; input_tokens: string; output_tokens: string }>(`
+      SELECT
+        COALESCE(model, 'gemini-2.5-flash') as model,
+        COALESCE(SUM(input_tokens), 0) as input_tokens,
+        COALESCE(SUM(output_tokens), 0) as output_tokens
+      FROM usage_logs
+      GROUP BY model
+    `);
+
+    const usage_by_plan: Record<string, number> = { free: 0, starter: 0, pro: 0, business: 0 };
+    planBreakdownRes.rows.forEach((r) => {
+      usage_by_plan[r.plan_tier] = parseInt(r.count, 10);
+    });
+
+    const token_usage_by_model: Record<string, { input_tokens: number; output_tokens: number }> = {};
+    modelBreakdownRes.rows.forEach((r) => {
+      token_usage_by_model[r.model] = {
+        input_tokens: parseInt(r.input_tokens, 10),
+        output_tokens: parseInt(r.output_tokens, 10)
+      };
+    });
+
+    return {
+      total_users: parseInt(usersCountRes.rows[0]?.total || "0", 10),
+      free_users: parseInt(usersCountRes.rows[0]?.free || "0", 10),
+      paid_users: parseInt(usersCountRes.rows[0]?.paid || "0", 10),
+      receipts_processed_this_month: parseInt(usageCountRes.rows[0]?.this_month || "0", 10),
+      receipts_processed_all_time: parseInt(usageCountRes.rows[0]?.all_time || "0", 10),
+      usage_by_plan,
+      gemini_requests: parseInt(usageCountRes.rows[0]?.gemini_requests || "0", 10),
+      failed_parsing_count: parseInt(usageCountRes.rows[0]?.failed_count || "0", 10),
+      input_tokens_total: parseInt(usageCountRes.rows[0]?.input_tokens || "0", 10),
+      output_tokens_total: parseInt(usageCountRes.rows[0]?.output_tokens || "0", 10),
+      token_usage_by_model
+    };
   }
 }
 

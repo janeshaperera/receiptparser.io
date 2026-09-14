@@ -1,4 +1,4 @@
-﻿import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 import { stripeService } from "../services/stripe.service.js";
 import { webhookService } from "../services/webhook.service.js";
 import { UserRepository } from "../db/repositories.js";
@@ -19,7 +19,7 @@ export class BillingController {
       return next(
         new AppError(
           "INVALID_PLAN",
-          parsed.error.errors[0]?.message || "Invalid plan selection. Choose 'starter' or 'pro'.",
+          parsed.error.errors[0]?.message || "Invalid plan selection. Choose 'starter', 'pro', or 'business'.",
           400,
           { errors: parsed.error.flatten() }
         )

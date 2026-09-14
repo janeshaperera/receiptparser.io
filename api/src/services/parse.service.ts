@@ -1,4 +1,4 @@
-﻿import { geminiService } from "./gemini.service.js";
+import { geminiService } from "./gemini.service.js";
 import { ReceiptExtraction, AppError } from "../schemas/receipt.schema.js";
 import { verifyReceiptConsistency } from "../utils/consistencyCheck.js";
 import { validateFileMagicBytes } from "../utils/fileValidator.js";
@@ -7,6 +7,11 @@ export interface ParseResult {
   receipt: ReceiptExtraction;
   consistencyChecked: boolean;
   retried: boolean;
+  telemetry: {
+    model: string;
+    inputTokens: number;
+    outputTokens: number;
+  };
 }
 
 export class ParseService {
@@ -40,7 +45,8 @@ export class ParseService {
       return {
         receipt: extraction,
         consistencyChecked: true,
-        retried: false
+        retried: false,
+        telemetry: { ...geminiService.lastTelemetry }
       };
     }
 
@@ -75,7 +81,8 @@ export class ParseService {
     return {
       receipt: extraction,
       consistencyChecked: true,
-      retried: true
+      retried: true,
+      telemetry: { ...geminiService.lastTelemetry }
     };
   }
 }

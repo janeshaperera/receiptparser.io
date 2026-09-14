@@ -4,6 +4,7 @@ import { ParseController } from "../controllers/parse.controller.js";
 import { UsageController } from "../controllers/usage.controller.js";
 import { BillingController } from "../controllers/billing.controller.js";
 import { AuthController } from "../controllers/auth.controller.js";
+import { AdminController } from "../controllers/admin.controller.js";
 import { authenticateApiKey } from "../middleware/auth.js";
 import { checkPlanUsageLimit } from "../middleware/planLimit.js";
 import { upload } from "../middleware/upload.js";
@@ -13,6 +14,9 @@ const router = Router();
 // Public health & status endpoints
 router.get("/health", HealthController.getHealth);
 router.get("/status", HealthController.getStatus);
+
+// Admin stats endpoint (requires x-admin-key header)
+router.get("/admin/stats", AdminController.getStats);
 
 // Passwordless Authentication & Recovery endpoints
 router.post("/auth/signup", AuthController.signup);

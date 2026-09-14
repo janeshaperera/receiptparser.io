@@ -47,8 +47,16 @@ CREATE TABLE IF NOT EXISTS usage_logs (
     mime_type VARCHAR(100) NOT NULL,
     status VARCHAR(50) NOT NULL,
     duration_ms INTEGER NOT NULL DEFAULT 0,
+    model VARCHAR(100) DEFAULT 'gemini-2.5-flash',
+    input_tokens INTEGER DEFAULT 0,
+    output_tokens INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Safe migration statements if table already exists
+ALTER TABLE usage_logs ADD COLUMN IF NOT EXISTS model VARCHAR(100) DEFAULT 'gemini-2.5-flash';
+ALTER TABLE usage_logs ADD COLUMN IF NOT EXISTS input_tokens INTEGER DEFAULT 0;
+ALTER TABLE usage_logs ADD COLUMN IF NOT EXISTS output_tokens INTEGER DEFAULT 0;
 
 CREATE INDEX IF NOT EXISTS idx_usage_logs_user_date ON usage_logs(user_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_usage_logs_api_key ON usage_logs(api_key_id);

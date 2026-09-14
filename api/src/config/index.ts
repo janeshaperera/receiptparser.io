@@ -57,5 +57,11 @@ export const config = {
   },
   get stripeProPriceId(): string {
     return process.env.STRIPE_PRO_PRICE_ID || "price_pro_test";
+  },
+  get stripeBusinessPriceId(): string {
+    return process.env.STRIPE_BUSINESS_PRICE_ID || "price_business_test";
+  },
+  get adminSecretKey(): string {
+    return process.env.ADMIN_SECRET_KEY || "rcpt_admin_secret_key_change_in_prod";
   }
 };

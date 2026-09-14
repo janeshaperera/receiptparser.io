@@ -59,8 +59,9 @@ describe("ReceiptParser.io Phase 2: Usage + Stripe Billing Test Suite", () => {
     expect(res.status).toBe(200);
     expect(res.body.used).toBe(0);
     expect(res.body.plan).toBe("free");
-    expect(res.body.limit).toBe(50);
-    expect(res.body.remaining).toBe(50);
+    expect(res.body.limit).toBe(20);
+    expect(res.body.remaining).toBe(20);
+    expect(res.body).toHaveProperty("reset_date");
   });
 
   test("2. Successful parse creates usage record", async () => {
@@ -89,7 +90,7 @@ describe("ReceiptParser.io Phase 2: Usage + Stripe Billing Test Suite", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.used).toBe(1);
-    expect(res.body.remaining).toBe(49);
+    expect(res.body.remaining).toBe(19);
   });
 
   test("4. GET /v1/usage returns correct usage structure", async () => {
@@ -103,6 +104,7 @@ describe("ReceiptParser.io Phase 2: Usage + Stripe Billing Test Suite", () => {
     expect(res.body).toHaveProperty("limit");
     expect(res.body).toHaveProperty("remaining");
     expect(res.body).toHaveProperty("period");
+    expect(res.body).toHaveProperty("reset_date");
   });
 
   test("5. GET /v1/usage/daily returns correct daily data", async () => {
@@ -124,17 +126,17 @@ describe("ReceiptParser.io Phase 2: Usage + Stripe Billing Test Suite", () => {
     expect(res.body.days[0]).toHaveProperty("count");
   });
 
-  test("6. Free limit = 50", async () => {
+  test("6. Free limit = 20", async () => {
     const res = await request(app)
       .get("/v1/usage")
       .set("Authorization", `Bearer ${userApiKey}`);
 
     expect(res.status).toBe(200);
     expect(res.body.plan).toBe("free");
-    expect(res.body.limit).toBe(50);
+    expect(res.body.limit).toBe(20);
   });
 
-  test("7. Starter limit = 1,000", async () => {
+  test("7. Starter limit = 250", async () => {
     await UserRepository.updatePlanAndSubscription({ userId, plan: "starter" });
 
     const res = await request(app)
@@ -143,10 +145,10 @@ describe("ReceiptParser.io Phase 2: Usage + Stripe Billing Test Suite", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.plan).toBe("starter");
-    expect(res.body.limit).toBe(1000);
+    expect(res.body.limit).toBe(250);
   });
 
-  test("8. Pro limit = 10,000", async () => {
+  test("8. Pro limit = 1,000", async () => {
     await UserRepository.updatePlanAndSubscription({ userId, plan: "pro" });
 
     const res = await request(app)
@@ -155,12 +157,24 @@ describe("ReceiptParser.io Phase 2: Usage + Stripe Billing Test Suite", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.plan).toBe("pro");
-    expect(res.body.limit).toBe(10000);
+    expect(res.body.limit).toBe(1000);
+  });
+
+  test("8b. Business limit = 5,000", async () => {
+    await UserRepository.updatePlanAndSubscription({ userId, plan: "business" });
+
+    const res = await request(app)
+      .get("/v1/usage")
+      .set("Authorization", `Bearer ${userApiKey}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.plan).toBe("business");
+    expect(res.body.limit).toBe(5000);
   });
 
   test("9. Request at limit returns 429 PLAN_LIMIT_EXCEEDED", async () => {
-    // Seed user usage to 50 (the free limit)
-    for (let i = 0; i < 50; i++) {
+    // Seed user usage to 20 (the free limit)
+    for (let i = 0; i < 20; i++) {
       mockStore.usageLogs.push({
         id: `seed-${i}`,
         user_id: userId,
@@ -182,14 +196,14 @@ describe("ReceiptParser.io Phase 2: Usage + Stripe Billing Test Suite", () => {
     expect(res.status).toBe(429);
     expect(res.body.success).toBe(false);
     expect(res.body.error.code).toBe("PLAN_LIMIT_EXCEEDED");
-    expect(res.body.error.message).toContain("Monthly request limit exceeded");
+    expect(res.body.error.message).toContain("You've used all 20 free receipts this month");
   });
 
   test("10. PLAN_LIMIT_EXCEEDED does not call Gemini", async () => {
     const geminiSpy = jest.spyOn(geminiService, "extractReceipt");
 
-    // Seed to 50
-    for (let i = 0; i < 50; i++) {
+    // Seed to 20
+    for (let i = 0; i < 20; i++) {
       mockStore.usageLogs.push({
         id: `seed-${i}`,
         user_id: userId,
@@ -259,12 +273,26 @@ describe("ReceiptParser.io Phase 2: Usage + Stripe Billing Test Suite", () => {
     expect(res.body.checkout_url).toContain("pro");
   });
 
+  test("14b. Business Checkout created", async () => {
+    const res = await request(app)
+      .post("/v1/billing/checkout")
+      .set("Authorization", `Bearer ${userApiKey}`)
+      .send({ plan: "business" });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty("checkout_url");
+    expect(res.body).toHaveProperty("session_id");
+    expect(res.body.checkout_url).toContain("business");
+  });
+
   test("15. Correct Stripe Price ID selected", () => {
     const starterPrice = stripeService.getPriceIdForPlan("starter");
     const proPrice = stripeService.getPriceIdForPlan("pro");
+    const businessPrice = stripeService.getPriceIdForPlan("business");
 
     expect(starterPrice).toBe("price_starter_test");
     expect(proPrice).toBe("price_pro_test");
+    expect(businessPrice).toBe("price_business_test");
   });
 
   test("16. Correct metadata included in checkout session call", async () => {
@@ -558,5 +586,49 @@ describe("ReceiptParser.io Phase 2: Usage + Stripe Billing Test Suite", () => {
     expect(checkoutRes.status).toBe(200);
     expect(JSON.stringify(checkoutRes.body)).not.toContain("sk_");
     expect(JSON.stringify(checkoutRes.body)).not.toContain("whsec_");
+  });
+
+  // ================= ADMIN STATS TESTS =================
+
+  test("31. GET /v1/admin/stats rejects requests without valid x-admin-key", async () => {
+    const resNoKey = await request(app).get("/v1/admin/stats");
+    expect(resNoKey.status).toBe(401);
+    expect(resNoKey.body.error.code).toBe("ADMIN_UNAUTHORIZED");
+
+    const resBadKey = await request(app)
+      .get("/v1/admin/stats")
+      .set("x-admin-key", "wrong-secret");
+    expect(resBadKey.status).toBe(401);
+    expect(resBadKey.body.error.code).toBe("ADMIN_UNAUTHORIZED");
+  });
+
+  test("32. GET /v1/admin/stats returns aggregate usage metrics with valid key", async () => {
+    mockStore.usageLogs.push({
+      id: "admin-stat-1",
+      user_id: userId,
+      api_key_id: "key-1",
+      file_name: "receipt1.png",
+      file_size_bytes: 500,
+      mime_type: "image/png",
+      status: "SUCCESS",
+      duration_ms: 120,
+      model: "gemini-2.5-flash",
+      input_tokens: 1500,
+      output_tokens: 350,
+      created_at: new Date()
+    });
+
+    const res = await request(app)
+      .get("/v1/admin/stats")
+      .set("x-admin-key", "rcpt_admin_secret_key_change_in_prod");
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.stats).toBeDefined();
+    expect(res.body.stats.total_processed).toBeGreaterThanOrEqual(1);
+    expect(res.body.stats.total_input_tokens).toBeGreaterThanOrEqual(1500);
+    expect(res.body.stats.total_output_tokens).toBeGreaterThanOrEqual(350);
+    expect(res.body.stats.estimated_ai_cost_usd).toBeGreaterThan(0);
+    expect(res.body.stats.active_users_this_month).toBeGreaterThanOrEqual(1);
   });
 });

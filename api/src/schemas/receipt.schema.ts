@@ -1,4 +1,4 @@
-﻿import { z } from "zod";
+import { z } from "zod";
 
 export const LineItemSchema = z.object({
   description: z.string().min(1, "Line item description is required"),
@@ -38,6 +38,7 @@ export type ErrorCode =
   | "STRIPE_CUSTOMER_NOT_FOUND"
   | "STRIPE_WEBHOOK_INVALID"
   | "STRIPE_WEBHOOK_PROCESSING_FAILED"
+  | "ADMIN_UNAUTHORIZED"
   | "INTERNAL_SERVER_ERROR";
 
 export interface StandardApiError {

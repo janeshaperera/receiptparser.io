@@ -1,4 +1,4 @@
-﻿import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { config } from "../config/index.js";
 import { ReceiptExtraction, ReceiptExtractionSchema, AppError } from "../schemas/receipt.schema.js";
 import { normalizeReceiptDate } from "../utils/dateNormalizer.js";
@@ -56,8 +56,20 @@ export const DETERMINISTIC_MOCK_RECEIPT: ReceiptExtraction = {
   total: 11.95
 };
 
+export interface GeminiExtractionResult {
+  receipt: ReceiptExtraction;
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+}
+
 export class GeminiService {
   private ai: GoogleGenAI | null = null;
+  public lastTelemetry: { model: string; inputTokens: number; outputTokens: number } = {
+    model: config.geminiModel,
+    inputTokens: 0,
+    outputTokens: 0
+  };
 
   constructor() {
     if (!config.mockLlm && config.geminiApiKey) {
@@ -75,6 +87,11 @@ export class GeminiService {
   ): Promise<ReceiptExtraction> {
     if (config.mockLlm) {
       // Deterministic mock mode
+      this.lastTelemetry = {
+        model: config.geminiModel,
+        inputTokens: 120,
+        outputTokens: 85
+      };
       return { ...DETERMINISTIC_MOCK_RECEIPT };
     }
 
@@ -137,6 +154,14 @@ Extract all details strictly into the structured JSON schema.
       if (!responseText) {
         throw new AppError("EXTRACTION_FAILED", "Gemini returned an empty response", 502);
       }
+
+      // Record token telemetry for internal cost monitoring
+      const usageMetadata = (response as any).usageMetadata;
+      this.lastTelemetry = {
+        model: config.geminiModel,
+        inputTokens: usageMetadata?.promptTokenCount || 0,
+        outputTokens: usageMetadata?.candidatesTokenCount || 0
+      };
 
       let parsedJson: any;
       try {

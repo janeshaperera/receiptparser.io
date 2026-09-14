@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -82,7 +82,7 @@ export default function DashboardPage() {
     router.push("/login");
   };
 
-  const handleUpgrade = async (plan: "starter" | "pro") => {
+  const handleUpgrade = async (plan: "starter" | "pro" | "business") => {
     if (!apiKey) return;
     setBillingLoading(true);
     setError(null);
@@ -126,10 +126,11 @@ export default function DashboardPage() {
   }
 
   const used = usage?.used ?? 0;
-  const limit = usage?.limit ?? 50;
-  const remaining = usage?.remaining ?? 50;
+  const limit = usage?.limit ?? 20;
+  const remaining = usage?.remaining ?? 20;
   const percentage = Math.min(100, Math.round((used / limit) * 100));
   const plan = usage?.plan || "free";
+  const resetDate = usage?.reset_date || "First of next month";
 
   return (
     <>
@@ -210,7 +211,7 @@ export default function DashboardPage() {
                   Monthly Quota ({usage?.period || "Current Period"})
                 </span>
                 <span className="text-xs font-mono font-bold text-white">
-                  {used.toLocaleString()} / {limit.toLocaleString()} reqs ({percentage}%)
+                  {used.toLocaleString()} / {limit.toLocaleString()} receipts ({percentage}%)
                 </span>
               </div>
 
@@ -225,7 +226,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-slate-800/80 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-4 border-t border-slate-800/80 text-xs">
               <div>
                 <span className="text-slate-500 block">Plan Tier</span>
                 <span className="font-semibold text-slate-200 capitalize">{plan}</span>
@@ -235,12 +236,16 @@ export default function DashboardPage() {
                 <span className="font-semibold text-slate-200">{limit.toLocaleString()}</span>
               </div>
               <div>
-                <span className="text-slate-500 block">Used this Month</span>
+                <span className="text-slate-500 block">Used</span>
                 <span className="font-semibold text-cyan-400">{used.toLocaleString()}</span>
               </div>
               <div>
                 <span className="text-slate-500 block">Remaining</span>
                 <span className="font-semibold text-emerald-400">{remaining.toLocaleString()}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block">Reset Date</span>
+                <span className="font-semibold text-slate-300 font-mono text-[11px]">{resetDate}</span>
               </div>
             </div>
           </div>
@@ -282,36 +287,52 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Upgrade Cards if on Free or Starter */}
-          {plan !== "pro" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-800/80">
+          {/* Upgrade Cards */}
+          {plan !== "business" && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-800/80">
               {plan === "free" && (
-                <div className="p-4 rounded-lg border border-cyan-500/30 bg-cyan-500/5 flex items-center justify-between">
+                <div className="p-4 rounded-lg border border-slate-800 bg-slate-900/60 flex flex-col justify-between space-y-3">
                   <div>
-                    <span className="text-xs font-mono text-cyan-400 font-bold uppercase">Starter Plan</span>
-                    <p className="text-xs text-slate-300 mt-0.5">1,000 reqs/mo for $29/mo</p>
+                    <span className="text-xs font-mono text-slate-300 font-bold uppercase">Starter Plan</span>
+                    <p className="text-xs text-slate-400 mt-0.5">250 receipts/mo • $5/mo</p>
                   </div>
                   <button
                     onClick={() => handleUpgrade("starter")}
                     disabled={billingLoading}
-                    className="px-3.5 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold transition-all"
+                    className="w-full py-1.5 rounded-lg border border-slate-700 hover:bg-slate-800 text-slate-200 text-xs font-semibold transition-all"
                   >
-                    Upgrade
+                    Upgrade to Starter
                   </button>
                 </div>
               )}
 
-              <div className="p-4 rounded-lg border border-slate-800 bg-slate-900/60 flex items-center justify-between">
+              {(plan === "free" || plan === "starter") && (
+                <div className="p-4 rounded-lg border border-cyan-500/30 bg-cyan-500/5 flex flex-col justify-between space-y-3">
+                  <div>
+                    <span className="text-xs font-mono text-cyan-400 font-bold uppercase">Pro Plan</span>
+                    <p className="text-xs text-slate-300 mt-0.5">1,000 receipts/mo • $15/mo</p>
+                  </div>
+                  <button
+                    onClick={() => handleUpgrade("pro")}
+                    disabled={billingLoading}
+                    className="w-full py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition-all shadow-sm shadow-cyan-500/20"
+                  >
+                    Upgrade to Pro
+                  </button>
+                </div>
+              )}
+
+              <div className="p-4 rounded-lg border border-slate-800 bg-slate-900/60 flex flex-col justify-between space-y-3">
                 <div>
-                  <span className="text-xs font-mono text-slate-300 font-bold uppercase">Pro Plan</span>
-                  <p className="text-xs text-slate-400 mt-0.5">10,000 reqs/mo for $99/mo</p>
+                  <span className="text-xs font-mono text-slate-300 font-bold uppercase">Business Plan</span>
+                  <p className="text-xs text-slate-400 mt-0.5">5,000 receipts/mo • $39/mo</p>
                 </div>
                 <button
-                  onClick={() => handleUpgrade("pro")}
+                  onClick={() => handleUpgrade("business")}
                   disabled={billingLoading}
-                  className="px-3.5 py-1.5 rounded-lg border border-slate-700 hover:bg-slate-800 text-slate-200 text-xs font-semibold transition-all"
+                  className="w-full py-1.5 rounded-lg border border-slate-700 hover:bg-slate-800 text-slate-200 text-xs font-semibold transition-all"
                 >
-                  Upgrade to Pro
+                  Upgrade to Business
                 </button>
               </div>
             </div>

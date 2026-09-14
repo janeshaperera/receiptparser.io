@@ -1,4 +1,4 @@
-﻿import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 import { parseService } from "../services/parse.service.js";
 import { UsageRepository } from "../db/repositories.js";
 import { AppError } from "../schemas/receipt.schema.js";
@@ -25,7 +25,7 @@ export class ParseController {
       const result = await parseService.parseReceipt(buffer, mimetype, originalname);
       const durationMs = Date.now() - startTime;
 
-      // Log successful usage asynchronously
+      // Log successful usage asynchronously with cost telemetry (no receipt contents or sensitive data)
       UsageRepository.logUsage({
         user_id: userId,
         api_key_id: apiKeyId,
@@ -33,7 +33,10 @@ export class ParseController {
         file_size_bytes: size,
         mime_type: mimetype,
         status: "SUCCESS",
-        duration_ms: durationMs
+        duration_ms: durationMs,
+        model: result.telemetry.model,
+        input_tokens: result.telemetry.inputTokens,
+        output_tokens: result.telemetry.outputTokens
       }).catch((err) => {
         console.error("Failed to write usage log:", err);
       });
