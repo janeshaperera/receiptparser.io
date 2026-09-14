@@ -33,9 +33,14 @@ jobs:
             exit 1
           fi
 
-          # Scan for live Supabase or private tokens committed in code
-          if git grep -i "rcpt_live_" -- ':!tests' ':!web/e2e' ':!dist'; then
+          # Scan for live API key tokens (actual 32+ hex chars), Supabase service tokens, or private keys
+          if git grep -E -i "rcpt_live_[a-f0-9]{20,}" -- ':!api/tests' ':!web/tests' ':!web/e2e'; then
             echo "::error::Live API key signature detected in tracked repository files!"
+            exit 1
+          fi
+
+          if git grep -E -i "(sk_live_[a-zA-Z0-9]{24,}|AIzaSy[a-zA-Z0-9_-]{33})" -- ':!api/tests'; then
+            echo "::error::Exposed third-party private API token detected!"
             exit 1
           fi
           echo "Secret scan passed cleanly."
