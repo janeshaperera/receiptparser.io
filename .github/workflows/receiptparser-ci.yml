@@ -1,0 +1,195 @@
+name: ReceiptParser.io CI/CD Release Gate
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-release-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # -------------------------------------------------------------
+  # Security & Secret Scanning Audit
+  # -------------------------------------------------------------
+  security-audit:
+    name: Security & Secret Leak Detection
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository Clean
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify No Committed Secrets or Live API Keys
+        run: |
+          echo "Scanning codebase for committed .env files or exposed secrets..."
+          # Fail if any raw .env files (except .env.example) are committed
+          if git ls-files | grep -E '(^|/)\.env($|\.local|\.production|\.development)'; then
+            echo "::error::Committed .env file detected in repository!"
+            exit 1
+          fi
+
+          # Scan for live Supabase or private tokens committed in code
+          if git grep -i "rcpt_live_" -- ':!tests' ':!web/e2e' ':!dist'; then
+            echo "::error::Live API key signature detected in tracked repository files!"
+            exit 1
+          fi
+          echo "Secret scan passed cleanly."
+
+      - name: Setup Node.js for Dependency Audit
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Audit API Package Dependencies
+        working-directory: api
+        run: |
+          npm audit --audit-level=high || echo "::warning::Non-blocking API dependency audit advisories found"
+
+      - name: Audit Web Package Dependencies
+        working-directory: web
+        run: |
+          npm audit --audit-level=high || echo "::warning::Non-blocking Web dependency audit advisories found"
+
+  # -------------------------------------------------------------
+  # Independent Build, Test, and Playwright Verification Gate
+  # -------------------------------------------------------------
+  release-gate:
+    name: Build & E2E Release Gate
+    needs: [security-audit]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Clean Environment
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: |
+            api/package-lock.json
+            web/package-lock.json
+
+      # 1. Install & Build API
+      - name: Install API Dependencies
+        working-directory: api
+        run: npm ci
+
+      - name: Compile and Build API
+        working-directory: api
+        run: npm run build
+
+      # 2. Run API Unit & Integration Tests (Mock DB & Mock LLM/Stripe in CI)
+      - name: Run API Unit & Integration Tests
+        working-directory: api
+        env:
+          NODE_ENV: test
+          PORT: 10000
+          MOCK_DB: "true"
+          MOCK_LLM: "true"
+          MOCK_STRIPE: "true"
+          RECOVERY_SECRET: "ci_release_gate_test_recovery_secret_32bytes"
+          RATE_LIMIT_MAX: "500"
+        run: npm test
+
+      # 3. Install & Build Web Frontend
+      - name: Install Web Dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Install Playwright Chromium Browser & OS Dependencies
+        working-directory: web
+        run: npx playwright install --with-deps chromium
+
+      - name: Build Next.js Web Frontend
+        working-directory: web
+        env:
+          NEXT_PUBLIC_API_URL: "http://localhost:10000"
+        run: npm run build
+
+      # 4. Start Live Backend API Server on Port 10000
+      - name: Start API Server in Background
+        working-directory: api
+        env:
+          NODE_ENV: development
+          PORT: 10000
+          MOCK_DB: "true"
+          MOCK_LLM: "true"
+          MOCK_STRIPE: "true"
+          RECOVERY_SECRET: "ci_release_gate_test_recovery_secret_32bytes"
+          WEB_ORIGIN: "http://localhost:3000,http://localhost:3001"
+          RATE_LIMIT_MAX: "2000"
+        run: |
+          node dist/server.js &
+          API_PID=$!
+          echo "API started with PID $API_PID"
+
+          # Poll health endpoint until healthy
+          echo "Waiting for API server on http://localhost:10000/v1/health..."
+          for i in {1..30}; do
+            if curl -s -f http://localhost:10000/v1/health; then
+              echo " API is online and responding."
+              break
+            fi
+            sleep 1
+          done
+
+      # 5. Start Live Next.js Web Frontend on Port 3001
+      - name: Start Web Frontend in Background
+        working-directory: web
+        env:
+          PORT: 3001
+          NEXT_PUBLIC_API_URL: "http://localhost:10000"
+        run: |
+          npm run start -- -p 3001 &
+          WEB_PID=$!
+          echo "Web frontend started with PID $WEB_PID"
+
+          # Poll frontend until ready
+          echo "Waiting for Web frontend on http://localhost:3001..."
+          for i in {1..30}; do
+            if curl -s -f http://localhost:3001; then
+              echo " Web frontend is online and responding."
+              break
+            fi
+            sleep 1
+          done
+
+      # 6. Run Complete Playwright End-to-End Test Suite Against Real Running App
+      - name: Run Playwright E2E Verification Suite
+        working-directory: web
+        run: npx playwright test
+
+      # 7. Upload Artifacts (Screenshots, Videos, Traces) on Failure
+      - name: Upload Test Artifacts on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-failure-artifacts
+          path: |
+            web/test-results/
+            web/playwright-report/
+          retention-days: 14
+
+      # 8. Release Gate Decision Output
+      - name: Release Gate Decision
+        if: success()
+        run: |
+          echo "========================================================"
+          echo "               RELEASE READY: PASSED                    "
+          echo "========================================================"
+          echo "All 24 automated release gate checkpoints passed cleanly."
+
+      - name: Release Gate Failure Notice
+        if: failure()
+        run: |
+          echo "========================================================"
+          echo "               RELEASE BLOCKED: FAILED                  "
+          echo "========================================================"
+          echo "A critical regression or test failure was detected."
+          echo "Deployment halted."

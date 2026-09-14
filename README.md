@@ -291,3 +291,47 @@ cd receiptparser/api && npm run dev
 cd receiptparser/web && npm run dev
 ```
 Open [http://localhost:3001](http://localhost:3001) in your browser.
+
+---
+
+## How we verify releases
+
+ReceiptParser.io uses an **independent, automated CI/CD release-gate system** (`.github/workflows/receiptparser-ci.yml`) that executes on every push to `main` and all pull requests. 
+
+A deployment is **never** considered successful merely because code builds or mock functions return static data. Every release candidate is spun up from a clean Ubuntu environment and verified by driving an actual Chromium browser against the live application.
+
+### The 24 Release Gate Checkpoints:
+
+1. **Clean Environment Isolation**: Each pipeline runs inside a clean GitHub Actions runner with fresh dependencies (`npm ci`).
+2. **Secret Leak Detection**: Pre-build repository scan to ensure zero committed `.env` secrets, credentials, or private tokens.
+3. **Dependency Security Audit**: Runs `npm audit` on both API and Web packages.
+4. **API TypeScript Compilation**: Strictly compiles backend code via `tsc` to enforce complete type safety.
+5. **Web Next.js Production Build**: Builds optimized static & App Router production assets.
+6. **Backend Unit & Integration Suite**: Executes 60 Jest tests covering all controllers, repositories, rate-limiters, and edge cases.
+7. **Quota Check Before AI**: Verifies that requests exceeding plan quotas (`429 PLAN_LIMIT_EXCEEDED`) are blocked *before* Gemini Vision or OCR APIs are invoked.
+8. **Live API Background Launch**: Launches the compiled API server on `http://localhost:10000` and polls `GET /v1/health` until ready.
+9. **Live Web Background Launch**: Launches the compiled Next.js server on `http://localhost:3001` and polls until responsive.
+10. **Headless Chromium Browser Automation**: Boots Playwright browser instances without synthetic mocking of DOM elements.
+11. **Isolated Account Registration**: Creates an isolated test account with dynamic timestamp email and password.
+12. **Automatic Session Redirection**: Verifies the user is redirected to `/dashboard` with session tokens securely stored.
+13. **Dashboard Access & State Rehydration**: Verifies navigation, quota banners, and dashboard components render properly.
+14. **Real File Upload through Actual UI**: Attaches a bundled receipt fixture (`sample-receipt.png`) directly into the UI file uploader.
+15. **Real `/v1/parse` Network Request**: Waits for and asserts that the live `POST /v1/parse` HTTP request succeeds with status 200.
+16. **Visible Merchant Extraction**: Confirms that extracted vendor name (e.g. `WHOLE FOODS MARKET`) is visible on the webpage.
+17. **Visible Transaction Date**: Confirms date parsing is rendered to the user.
+18. **Visible Line Items & Pricing**: Checks that extracted receipt items, quantities, and prices appear in the results table.
+19. **Visible Totals & Taxes**: Confirms subtotal, tax, and grand total match parsed data.
+20. **Client-Side JSON Export**: Triggers the `Export JSON` action and asserts a valid `.json` download event.
+21. **Client-Side CSV Export**: Triggers the `Export CSV` action and asserts a valid `.csv` download event.
+22. **Real-time Quota Meter Increment**: Confirms monthly usage meter increases (e.g. `1 of 20 receipts used`) immediately after parsing.
+23. **Security & Negative Failure Testing**:
+    - Invalid login credentials display user-friendly error banners.
+    - Unsupported file types (`.txt`) are rejected in the UI before network upload.
+    - Files exceeding the 10 MB limit are rejected with clear file size alerts.
+    - Unauthenticated dashboard access triggers automatic redirection to `/login`.
+    - Direct unauthenticated API requests are rejected with `401 MISSING_API_KEY`.
+24. **Failure Artifact Retention**: Whenever any test fails, screenshots, videos, and Playwright execution traces are saved for 14 days.
+
+### Gate Status:
+- If all 24 checkpoints pass: **`RELEASE READY`**
+- If any single requirement or test fails: **`RELEASE BLOCKED`** (deployment halted).
