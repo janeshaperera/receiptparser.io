@@ -22,15 +22,21 @@ export function createApp(options?: { rateLimitMax?: number }): Express {
     cors({
       origin: corsOrigin,
       methods: ["GET", "POST", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization", "Stripe-Signature"]
+      allowedHeaders: ["Content-Type", "Authorization", "Stripe-Signature", "X-Signature"]
     })
   );
 
-  // CRITICAL: Mount Stripe raw body webhook BEFORE express.json()
+  // CRITICAL: Mount Stripe & Lemon Squeezy raw body webhooks BEFORE express.json()
   app.post(
     "/v1/billing/webhook",
     express.raw({ type: "application/json" }),
     BillingController.handleWebhook
+  );
+
+  app.post(
+    "/v1/billing/lemonsqueezy/webhook",
+    express.raw({ type: "application/json" }),
+    BillingController.handleLemonSqueezyWebhook
   );
 
   // Body Parsing for standard JSON (non-webhook)

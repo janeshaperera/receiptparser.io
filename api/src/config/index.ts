@@ -45,7 +45,27 @@ export const config = {
   get rateLimitMax(): number {
     return parseInt(process.env.RATE_LIMIT_MAX || "100", 10);
   },
-  // Stripe configurations
+  // Billing Provider: "lemonsqueezy" | "stripe"
+  get billingProvider(): "lemonsqueezy" | "stripe" {
+    return (process.env.BILLING_PROVIDER as "lemonsqueezy" | "stripe") || "lemonsqueezy";
+  },
+  // Lemon Squeezy configurations
+  get lemonSqueezyApiKey(): string {
+    return process.env.LEMON_SQUEEZY_API_KEY || "";
+  },
+  get lemonSqueezyStoreId(): string {
+    return process.env.LEMON_SQUEEZY_STORE_ID || "";
+  },
+  get lemonSqueezyWebhookSecret(): string {
+    return process.env.LEMON_SQUEEZY_WEBHOOK_SECRET || "";
+  },
+  get lemonSqueezyStarterVariantId(): string {
+    return process.env.LEMON_SQUEEZY_STARTER_VARIANT_ID || "";
+  },
+  get lemonSqueezyProVariantId(): string {
+    return process.env.LEMON_SQUEEZY_PRO_VARIANT_ID || "";
+  },
+  // Stripe configurations (retained for rollback)
   get stripeSecretKey(): string {
     return process.env.STRIPE_SECRET_KEY || "";
   },

@@ -7,6 +7,7 @@ import { UserRepository, ApiKeyRepository, UsageRepository, WebhookEventReposito
 import { ApiKeyService } from "./services/apiKey.service.js";
 import { parseService } from "./services/parse.service.js";
 import { stripeService } from "./services/stripe.service.js";
+import { lemonSqueezyService } from "./services/lemonSqueezy.service.js";
 import { webhookService } from "./services/webhook.service.js";
 import { PLANS } from "./schemas/billing.schema.js";
 import { SignupRequestSchema, LoginRequestSchema, RecoverRequestSchema, RecoverConfirmRequestSchema } from "./schemas/auth.schema.js";
@@ -22,6 +23,12 @@ export type Bindings = {
   DATABASE_URL?: string;
   GEMINI_API_KEY?: string;
   GEMINI_MODEL?: string;
+  BILLING_PROVIDER?: string;
+  LEMON_SQUEEZY_API_KEY?: string;
+  LEMON_SQUEEZY_STORE_ID?: string;
+  LEMON_SQUEEZY_WEBHOOK_SECRET?: string;
+  LEMON_SQUEEZY_STARTER_VARIANT_ID?: string;
+  LEMON_SQUEEZY_PRO_VARIANT_ID?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
   STRIPE_STARTER_PRICE_ID?: string;
@@ -76,7 +83,7 @@ app.use("*", async (c, next) => {
       headers: {
         "Access-Control-Allow-Origin": allowOrigin,
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, Stripe-Signature, x-admin-key",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, Stripe-Signature, X-Signature, x-admin-key",
         "Access-Control-Max-Age": "86400"
       }
     });
@@ -85,7 +92,7 @@ app.use("*", async (c, next) => {
   await next();
   c.header("Access-Control-Allow-Origin", allowOrigin);
   c.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  c.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Stripe-Signature, x-admin-key");
+  c.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Stripe-Signature, X-Signature, x-admin-key");
 });
 
 // Centralized error handling
@@ -514,12 +521,25 @@ app.post("/v1/billing/checkout", async (c) => {
   const user = await UserRepository.findById(userId);
   const email = user?.email || `user_${userId}@receiptparser.io`;
 
-  const session = await stripeService.createCheckoutSession({
-    userId,
-    email,
-    apiKeyId: apiKeyRecord.id,
-    plan: parsed.data.plan
-  });
+  let session: { url: string; sessionId: string };
+
+  const provider = c.env.BILLING_PROVIDER || process.env.BILLING_PROVIDER || "lemonsqueezy";
+
+  if (provider === "lemonsqueezy") {
+    session = await lemonSqueezyService.createCheckoutSession({
+      userId,
+      email,
+      apiKeyId: apiKeyRecord.id,
+      plan: parsed.data.plan
+    });
+  } else {
+    session = await stripeService.createCheckoutSession({
+      userId,
+      email,
+      apiKeyId: apiKeyRecord.id,
+      plan: parsed.data.plan
+    });
+  }
 
   return c.json({
     checkout_url: session.url,
@@ -535,6 +555,7 @@ app.post("/v1/billing/portal", async (c) => {
   });
 });
 
+// Stripe Webhook Endpoint (Retained for rollback)
 app.post("/v1/billing/webhook", async (c) => {
   const signature = c.req.header("stripe-signature");
   if (!signature) {
@@ -551,6 +572,39 @@ app.post("/v1/billing/webhook", async (c) => {
     received: true,
     event_id: event.id,
     event_type: event.type,
+    duplicate: result.duplicate
+  });
+});
+
+// Lemon Squeezy Webhook Endpoint
+app.post("/v1/billing/lemonsqueezy/webhook", async (c) => {
+  const signature = c.req.header("x-signature");
+  if (!signature) {
+    throw new AppError("LEMON_SQUEEZY_WEBHOOK_INVALID", "Missing 'X-Signature' header", 400);
+  }
+
+  const rawBodyText = await c.req.text();
+  const secret = c.env.LEMON_SQUEEZY_WEBHOOK_SECRET || process.env.LEMON_SQUEEZY_WEBHOOK_SECRET;
+
+  if (secret) {
+    const isValid = lemonSqueezyService.verifyWebhookSignature(rawBodyText, signature, secret);
+    if (!isValid) {
+      throw new AppError("LEMON_SQUEEZY_WEBHOOK_INVALID", "Lemon Squeezy signature verification failed", 400);
+    }
+  }
+
+  let payload: any;
+  try {
+    payload = JSON.parse(rawBodyText);
+  } catch {
+    throw new AppError("INVALID_REQUEST", "Malformed JSON body in webhook", 400);
+  }
+
+  const result = await lemonSqueezyService.processWebhookEvent(payload);
+
+  return c.json({
+    received: true,
+    event_name: payload?.meta?.event_name,
     duplicate: result.duplicate
   });
 });
